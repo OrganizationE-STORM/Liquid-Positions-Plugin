@@ -1,0 +1,2590 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/nick/Documents/plugin-algebra/contracts/LPCallback.sol": {
+      "lastModificationDate": 1761999942665,
+      "contentHash": "a794bc29a7c294d845e50954493df044",
+      "sourceName": "contracts/LPCallback.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol",
+        "./interfaces/ILPPluginFactory.sol",
+        "@cryptoalgebra/integral-periphery/contracts/interfaces/external/IWNativeToken.sol",
+        "@cryptoalgebra/integral-periphery/contracts/libraries/TransferHelper.sol",
+        "@cryptoalgebra/integral-periphery/contracts/libraries/LiquidityAmounts.sol",
+        "@cryptoalgebra/integral-core/contracts/libraries/TickMath.sol",
+        "./interfaces/ILPCallback.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "LPCallback"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/interfaces/ILPPluginFactory.sol": {
+      "lastModificationDate": 1762158482331,
+      "contentHash": "c26c7d8225ddbe73e1cfb775b64f5ba4",
+      "sourceName": "contracts/interfaces/ILPPluginFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ILPPluginFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/interfaces/ILPCallback.sol": {
+      "lastModificationDate": 1761251654802,
+      "contentHash": "f850b0ba3fb32f165d4bfaec482732c0",
+      "sourceName": "contracts/interfaces/ILPCallback.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/interfaces/callback/IAlgebraMintCallback.sol",
+        "../libraries/CallbackStructs.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ILPCallback"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol": {
+      "lastModificationDate": 1759428848464,
+      "contentHash": "b9f08e35da7b4f4c81a3fc5460ea75f1",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./pool/IAlgebraPoolImmutables.sol",
+        "./pool/IAlgebraPoolState.sol",
+        "./pool/IAlgebraPoolActions.sol",
+        "./pool/IAlgebraPoolPermissionedActions.sol",
+        "./pool/IAlgebraPoolEvents.sol",
+        "./pool/IAlgebraPoolErrors.sol"
+      ],
+      "versionPragmas": [
+        ">=0.8.4"
+      ],
+      "artifacts": [
+        "IAlgebraPool"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/libraries/TransferHelper.sol": {
+      "lastModificationDate": 1759428506749,
+      "contentHash": "1945c6c248206f433d9a8c438f30c2cb",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/libraries/TransferHelper.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.0"
+      ],
+      "artifacts": [
+        "TransferHelper"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/libraries/LiquidityAmounts.sol": {
+      "lastModificationDate": 1759428506723,
+      "contentHash": "d232d4bf2e5a9b12b42ac6ad18eafdb5",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/libraries/LiquidityAmounts.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/libraries/FullMath.sol",
+        "@cryptoalgebra/integral-core/contracts/libraries/Constants.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "LiquidityAmounts"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/TickMath.sol": {
+      "lastModificationDate": 1759428848471,
+      "contentHash": "e39a578029867fde8fd1c5c4483e7f70",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/TickMath.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../interfaces/pool/IAlgebraPoolErrors.sol"
+      ],
+      "versionPragmas": [
+        ">=0.8.4 <0.9.0"
+      ],
+      "artifacts": [
+        "TickMath"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/interfaces/external/IWNativeToken.sol": {
+      "lastModificationDate": 1759428506723,
+      "contentHash": "2dea17d17c81ca621289b7b07d398830",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/interfaces/external/IWNativeToken.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IWNativeToken"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/libraries/CallbackStructs.sol": {
+      "lastModificationDate": 1761251654803,
+      "contentHash": "7cc44b900ef402dec6c2ba852e922563",
+      "sourceName": "contracts/libraries/CallbackStructs.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-periphery/contracts/libraries/PoolAddress.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "CallbackStructs"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/callback/IAlgebraMintCallback.sol": {
+      "lastModificationDate": 1759428848463,
+      "contentHash": "354cebb067018db1da00412e1bac9629",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/callback/IAlgebraMintCallback.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraMintCallback"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/libraries/PoolAddress.sol": {
+      "lastModificationDate": 1759428506749,
+      "contentHash": "961bd88f2cbe2e764d6f2e258fe1f4e1",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/libraries/PoolAddress.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "PoolAddress"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolImmutables.sol": {
+      "lastModificationDate": 1759428848465,
+      "contentHash": "39638ba188c590f27f90aec7395111dd",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolImmutables.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraPoolImmutables"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolPermissionedActions.sol": {
+      "lastModificationDate": 1759428848466,
+      "contentHash": "8621e01ef6391f0d72390c2e8b4d4d28",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolPermissionedActions.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraPoolPermissionedActions"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolErrors.sol": {
+      "lastModificationDate": 1759428848465,
+      "contentHash": "3bfa3ea5d1f095fc1fa028f5ecd8f8b5",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolErrors.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.8.4"
+      ],
+      "artifacts": [
+        "IAlgebraPoolErrors"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolState.sol": {
+      "lastModificationDate": 1759428848466,
+      "contentHash": "8d4dc30db00370e7859585b5426691e4",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolState.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraPoolState"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolActions.sol": {
+      "lastModificationDate": 1759428848464,
+      "contentHash": "91ad558027fab3f139590712b84c4eba",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolActions.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraPoolActions"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolEvents.sol": {
+      "lastModificationDate": 1759428848465,
+      "contentHash": "b6f6b1e8aee620672d5ddd2aefbf7478",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolEvents.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraPoolEvents"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+      "lastModificationDate": 1759428503655,
+      "contentHash": "9261adf6457863de3e9892f51317ec89",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.16"
+      ],
+      "artifacts": [
+        "IERC20"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/Constants.sol": {
+      "lastModificationDate": 1759428848459,
+      "contentHash": "2bb717d8973e68d42391bab11c47a3e5",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/Constants.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0 <0.9.0"
+      ],
+      "artifacts": [
+        "Constants"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/FullMath.sol": {
+      "lastModificationDate": 1759428848460,
+      "contentHash": "30e12a652e146df2976aa0190df3f91f",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/FullMath.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "FullMath"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol": {
+      "lastModificationDate": 1759428503655,
+      "contentHash": "513778b30d2750f5d2b9b19bbcf748a5",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC20.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IERC20Metadata"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol": {
+      "lastModificationDate": 1759428503640,
+      "contentHash": "59dfce11284f2636db261df9b6a18f81",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC20.sol",
+        "./extensions/IERC20Metadata.sol",
+        "../../utils/Context.sol",
+        "../../interfaces/draft-IERC6093.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ERC20"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/utils/Context.sol": {
+      "lastModificationDate": 1759428503634,
+      "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
+      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Context"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/interfaces/draft-IERC6093.sol": {
+      "lastModificationDate": 1759428503637,
+      "contentHash": "5041977bbe908de2e6ed0270447f79ad",
+      "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.8.4"
+      ],
+      "artifacts": [
+        "IERC1155Errors",
+        "IERC20Errors",
+        "IERC721Errors"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/access/Ownable.sol": {
+      "lastModificationDate": 1759428503662,
+      "contentHash": "d3c790edc9ccf808a17c5a6cd13614fd",
+      "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Ownable"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/LPToken.sol": {
+      "lastModificationDate": 1759428333956,
+      "contentHash": "93c31c59cab393a162e12471991746d2",
+      "sourceName": "contracts/LPToken.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "LPToken"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/LPTokenFactory.sol": {
+      "lastModificationDate": 1762013323351,
+      "contentHash": "680c3638e354a83ca86f7b18c973bd61",
+      "sourceName": "contracts/LPTokenFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./interfaces/ILPTokenFactory.sol",
+        "./LPToken.sol",
+        "hardhat/console.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "LPTokenFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/interfaces/ILPTokenFactory.sol": {
+      "lastModificationDate": 1762013327871,
+      "contentHash": "491a8ec050e1fe4fdd4cae1b0d8b71f8",
+      "sourceName": "contracts/interfaces/ILPTokenFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ILPTokenFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/hardhat/console.sol": {
+      "lastModificationDate": 1759428501432,
+      "contentHash": "681c532e816169606d13a5fe8b475074",
+      "sourceName": "hardhat/console.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "console"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/mocks/MockToken.sol": {
+      "lastModificationDate": 1759428333956,
+      "contentHash": "a99d948de906ba8e568af05654b2e3c7",
+      "sourceName": "contracts/mocks/MockToken.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "MockToken"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/interfaces/IERC20.sol": {
+      "lastModificationDate": 1762002462029,
+      "contentHash": "68620db2da7583d9a4919096ac77f577",
+      "sourceName": "@openzeppelin/contracts/interfaces/IERC20.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../token/ERC20/IERC20.sol"
+      ],
+      "versionPragmas": [
+        ">=0.4.16"
+      ],
+      "artifacts": []
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/interfaces/ILPToken.sol": {
+      "lastModificationDate": 1762012999673,
+      "contentHash": "19d78c2525352b46cf85497f35c98ae4",
+      "sourceName": "contracts/interfaces/ILPToken.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/interfaces/IERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ILPToken"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/abstract-plugin/contracts/AbstractCustomPluginFactory.sol": {
+      "lastModificationDate": 1759428506020,
+      "contentHash": "ba1feebac2793129f5e0845eb0dfd3df",
+      "sourceName": "@cryptoalgebra/abstract-plugin/contracts/AbstractCustomPluginFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-periphery/contracts/interfaces/IAlgebraCustomPoolEntryPoint.sol",
+        "./interfaces/ICustomPluginFactory.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "AbstractCustomPluginFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/abstract-plugin/contracts/interfaces/ICustomPluginFactory.sol": {
+      "lastModificationDate": 1759428506021,
+      "contentHash": "c788d989c76770c86c1e2b6387821ade",
+      "sourceName": "@cryptoalgebra/abstract-plugin/contracts/interfaces/ICustomPluginFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-periphery/contracts/interfaces/IAlgebraCustomPoolEntryPoint.sol",
+        "@cryptoalgebra/integral-core/contracts/interfaces/plugin/IAlgebraPluginFactory.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "ICustomPluginFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/interfaces/IAlgebraCustomPoolEntryPoint.sol": {
+      "lastModificationDate": 1759428506719,
+      "contentHash": "6f7ca0d281868c9585c30f1e96be7104",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/interfaces/IAlgebraCustomPoolEntryPoint.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/interfaces/plugin/IAlgebraPluginFactory.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraCustomPoolEntryPoint"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/plugin/IAlgebraPluginFactory.sol": {
+      "lastModificationDate": 1759428848464,
+      "contentHash": "f625550f20c606a7debe5ad461c1ff1f",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/plugin/IAlgebraPluginFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraPluginFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraFactory.sol": {
+      "lastModificationDate": 1759428848463,
+      "contentHash": "dc393e58ba43d83b9700693b64652d56",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./plugin/IAlgebraPluginFactory.sol",
+        "./vault/IAlgebraVaultFactory.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/vault/IAlgebraVaultFactory.sol": {
+      "lastModificationDate": 1759428848467,
+      "contentHash": "e16b26245f12e67c96b8afb242dc9a00",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/vault/IAlgebraVaultFactory.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraVaultFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/abstract-plugin/contracts/AbstractPlugin.sol": {
+      "lastModificationDate": 1759428506020,
+      "contentHash": "8f9e7832df38d25180f271c34e0425b3",
+      "sourceName": "@cryptoalgebra/abstract-plugin/contracts/AbstractPlugin.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/base/common/Timestamp.sol",
+        "@cryptoalgebra/integral-core/contracts/libraries/Plugins.sol",
+        "@cryptoalgebra/integral-core/contracts/libraries/SafeTransfer.sol",
+        "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraFactory.sol",
+        "@cryptoalgebra/integral-core/contracts/interfaces/pool/IAlgebraPoolState.sol",
+        "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol",
+        "./interfaces/IAbstractPlugin.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "AbstractPlugin"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/Plugins.sol": {
+      "lastModificationDate": 1759428848468,
+      "contentHash": "c080db0e5ba5daa591cd232c4f831b78",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/Plugins.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../interfaces/pool/IAlgebraPoolErrors.sol"
+      ],
+      "versionPragmas": [
+        ">=0.8.4 <0.9.0"
+      ],
+      "artifacts": [
+        "Plugins"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/abstract-plugin/contracts/interfaces/IAbstractPlugin.sol": {
+      "lastModificationDate": 1759428506021,
+      "contentHash": "6c4a0f90cd0a7919e8db2a3581dd2052",
+      "sourceName": "@cryptoalgebra/abstract-plugin/contracts/interfaces/IAbstractPlugin.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/interfaces/plugin/IAlgebraPlugin.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAbstractPlugin"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/SafeTransfer.sol": {
+      "lastModificationDate": 1759428848470,
+      "contentHash": "74efa6cb300b78dd0c303ce27a014dfc",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/SafeTransfer.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../interfaces/pool/IAlgebraPoolErrors.sol"
+      ],
+      "versionPragmas": [
+        ">=0.8.4 <0.9.0"
+      ],
+      "artifacts": [
+        "SafeTransfer"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/base/common/Timestamp.sol": {
+      "lastModificationDate": 1759428848472,
+      "contentHash": "eaad30114d2a5c28bc1e9eb61923fffb",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/base/common/Timestamp.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.8.0 <0.9.0"
+      ],
+      "artifacts": [
+        "Timestamp"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/interfaces/plugin/IAlgebraPlugin.sol": {
+      "lastModificationDate": 1759428848464,
+      "contentHash": "2b6b79066f37665a7153cc591dd4920f",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/interfaces/plugin/IAlgebraPlugin.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IAlgebraPlugin"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/libraries/PositionKey.sol": {
+      "lastModificationDate": 1759428506749,
+      "contentHash": "c34c5b693cf1b26680fb0d257dce201a",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/libraries/PositionKey.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "PositionKey"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/SafeCast.sol": {
+      "lastModificationDate": 1759428848470,
+      "contentHash": "d68395ed2a287ea96db871a11913395b",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/SafeCast.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0 <0.9.0"
+      ],
+      "artifacts": [
+        "SafeCast"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/utils/math/Math.sol": {
+      "lastModificationDate": 1759428503661,
+      "contentHash": "5ec781e33d3a9ac91ffdc83d94420412",
+      "sourceName": "@openzeppelin/contracts/utils/math/Math.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Panic.sol",
+        "./SafeCast.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Math"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/utils/math/SafeCast.sol": {
+      "lastModificationDate": 1759428503664,
+      "contentHash": "2adca1150f58fc6f3d1f0a0f22ee7cca",
+      "sourceName": "@openzeppelin/contracts/utils/math/SafeCast.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SafeCast"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/utils/Panic.sol": {
+      "lastModificationDate": 1759428503663,
+      "contentHash": "2133dc13536b4a6a98131e431fac59e1",
+      "sourceName": "@openzeppelin/contracts/utils/Panic.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Panic"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/utils/math/SignedMath.sol": {
+      "lastModificationDate": 1759428503665,
+      "contentHash": "ae3528afb8bdb0a7dcfba5b115ee8074",
+      "sourceName": "@openzeppelin/contracts/utils/math/SignedMath.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./SafeCast.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SignedMath"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/utils/Strings.sol": {
+      "lastModificationDate": 1759428503665,
+      "contentHash": "d8f70caf0e0c77dc908176ed44812fb7",
+      "sourceName": "@openzeppelin/contracts/utils/Strings.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./math/Math.sol",
+        "./math/SafeCast.sol",
+        "./math/SignedMath.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Strings"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/interfaces/INonfungiblePositionManager.sol": {
+      "lastModificationDate": 1759428506721,
+      "contentHash": "3ca0d0559b781df198e5fba66574dc45",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/interfaces/INonfungiblePositionManager.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol",
+        "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol",
+        "./IPoolInitializer.sol",
+        "./IERC721Permit.sol",
+        "./IPeripheryPayments.sol",
+        "./IPeripheryImmutableState.sol"
+      ],
+      "versionPragmas": [
+        ">=0.7.5"
+      ],
+      "artifacts": [
+        "INonfungiblePositionManager"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/interfaces/IERC721Permit.sol": {
+      "lastModificationDate": 1759428506721,
+      "contentHash": "c01ec419780272b88380c2185653fdae",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/interfaces/IERC721Permit.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/IERC721.sol"
+      ],
+      "versionPragmas": [
+        ">=0.7.5"
+      ],
+      "artifacts": [
+        "IERC721Permit"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/interfaces/IPoolInitializer.sol": {
+      "lastModificationDate": 1759428506722,
+      "contentHash": "a8b0eb0b15728dc53e2ee69679acc1f4",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/interfaces/IPoolInitializer.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.7.5"
+      ],
+      "artifacts": [
+        "IPoolInitializer"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/interfaces/IPeripheryPayments.sol": {
+      "lastModificationDate": 1759428506722,
+      "contentHash": "c03b3747914be9fa7e214aefebd704fa",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/interfaces/IPeripheryPayments.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.7.5"
+      ],
+      "artifacts": [
+        "IPeripheryPayments"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/interfaces/IPeripheryImmutableState.sol": {
+      "lastModificationDate": 1759428506722,
+      "contentHash": "d0caa7e84b44a7fe64a29ee40cd669c0",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/interfaces/IPeripheryImmutableState.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IPeripheryImmutableState"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol": {
+      "lastModificationDate": 1759428503659,
+      "contentHash": "136c64eca25bcb8a68f43ac6605559f9",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC721.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IERC721Metadata"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol": {
+      "lastModificationDate": 1759428503659,
+      "contentHash": "09d80d577d5abfc679455e7b67c5b537",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC721.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IERC721Enumerable"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol": {
+      "lastModificationDate": 1759428503658,
+      "contentHash": "f62e11dbd302e17a5621a1438f4e054c",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/IERC721.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../../utils/introspection/IERC165.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IERC721"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/utils/introspection/IERC165.sol": {
+      "lastModificationDate": 1759428503653,
+      "contentHash": "7074c93b1ea0a122063f26ddd1db1032",
+      "sourceName": "@openzeppelin/contracts/utils/introspection/IERC165.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.16"
+      ],
+      "artifacts": [
+        "IERC165"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/interfaces/IERC721Receiver.sol": {
+      "lastModificationDate": 1759428503659,
+      "contentHash": "a53c2ec7b6b13f5b399e5a78206f6a78",
+      "sourceName": "@openzeppelin/contracts/interfaces/IERC721Receiver.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../token/ERC721/IERC721Receiver.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": []
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol": {
+      "lastModificationDate": 1759428503659,
+      "contentHash": "d61660a41ce200e99816e4734f7fd202",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
+      "solcConfig": {
+        "version": "0.8.22",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IERC721Receiver"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/LPPlugin.sol": {
+      "lastModificationDate": 1762158537837,
+      "contentHash": "72621dbe844ec86ff8342fddec71a598",
+      "sourceName": "contracts/LPPlugin.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 500
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/abstract-plugin/contracts/AbstractPlugin.sol",
+        "@cryptoalgebra/integral-periphery/contracts/interfaces/INonfungiblePositionManager.sol",
+        "@cryptoalgebra/integral-periphery/contracts/libraries/PoolInteraction.sol",
+        "@cryptoalgebra/integral-periphery/contracts/libraries/PoolAddress.sol",
+        "@cryptoalgebra/integral-periphery/contracts/libraries/LiquidityAmounts.sol",
+        "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol",
+        "@cryptoalgebra/integral-core/contracts/libraries/TickMath.sol",
+        "@cryptoalgebra/integral-core/contracts/libraries/Plugins.sol",
+        "@openzeppelin/contracts/utils/math/SafeCast.sol",
+        "@openzeppelin/contracts/utils/math/Math.sol",
+        "@openzeppelin/contracts/utils/Strings.sol",
+        "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
+        "@openzeppelin/contracts/interfaces/IERC721Receiver.sol",
+        "@openzeppelin/contracts/interfaces/IERC20.sol",
+        "./LPCallback.sol",
+        "./interfaces/ILPToken.sol",
+        "./interfaces/ILPTokenFactory.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "LPPlugin"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-periphery/contracts/libraries/PoolInteraction.sol": {
+      "lastModificationDate": 1759428506749,
+      "contentHash": "713295d106d4ffa01985d480e0c7c725",
+      "sourceName": "@cryptoalgebra/integral-periphery/contracts/libraries/PoolInteraction.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 500
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol",
+        "./PositionKey.sol"
+      ],
+      "versionPragmas": [
+        "=0.8.20"
+      ],
+      "artifacts": [
+        "PoolInteraction"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/LPPluginFactory.sol": {
+      "lastModificationDate": 1762158554359,
+      "contentHash": "35fc789c2181a848ef3215c57ae29197",
+      "sourceName": "contracts/LPPluginFactory.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 500
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./LPPlugin.sol",
+        "./interfaces/ILPPluginFactory.sol",
+        "@cryptoalgebra/abstract-plugin/contracts/AbstractCustomPluginFactory.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "LPPluginFactory"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/LiquidityMath.sol": {
+      "lastModificationDate": 1759428848468,
+      "contentHash": "dc88e99167d952fc3cea9a22206a0614",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/LiquidityMath.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 500
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../interfaces/pool/IAlgebraPoolErrors.sol",
+        "./TickMath.sol",
+        "./TokenDeltaMath.sol"
+      ],
+      "versionPragmas": [
+        ">=0.8.4 <0.9.0"
+      ],
+      "artifacts": [
+        "LiquidityMath"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/node_modules/@cryptoalgebra/integral-core/contracts/libraries/TokenDeltaMath.sol": {
+      "lastModificationDate": 1759428848472,
+      "contentHash": "78c12040e361b9f801af7d671a720640",
+      "sourceName": "@cryptoalgebra/integral-core/contracts/libraries/TokenDeltaMath.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 500
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./SafeCast.sol",
+        "./FullMath.sol",
+        "./Constants.sol"
+      ],
+      "versionPragmas": [
+        "=0.8.20"
+      ],
+      "artifacts": [
+        "TokenDeltaMath"
+      ]
+    },
+    "/Users/nick/Documents/plugin-algebra/contracts/testUtils/TestUtils.sol": {
+      "lastModificationDate": 1761999942666,
+      "contentHash": "44c9529bb19a9e14f439e993207b2081",
+      "sourceName": "contracts/testUtils/TestUtils.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 500
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@cryptoalgebra/integral-core/contracts/libraries/LiquidityMath.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "TestUtils"
+      ]
+    }
+  }
+}
