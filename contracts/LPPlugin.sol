@@ -48,8 +48,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint8(
             Plugins.AFTER_POSITION_MODIFY_FLAG |
                 Plugins.BEFORE_SWAP_FLAG |
-                Plugins.BEFORE_POSITION_MODIFY_FLAG |
-                Plugins.DYNAMIC_FEE
+                Plugins.BEFORE_POSITION_MODIFY_FLAG
         );
 
     // Plugin state variables
