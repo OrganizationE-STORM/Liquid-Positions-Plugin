@@ -230,8 +230,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         address,
         address from,
         uint256 tokenId,
-        bytes calldata
+        bytes calldata data
     ) external override returns (bytes4) {
+        (uint256 min0, uint256 min1) = abi.decode(data, (uint256, uint256));
+        
         (
             ,
             ,
@@ -260,8 +262,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 INonfungiblePositionManager.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: userLiquidity,
-                    amount0Min: 0,
-                    amount1Min: 0,
+                    amount0Min: min0,
+                    amount1Min: min1,
                     deadline: block.timestamp + 10 minutes
                 })
             );
