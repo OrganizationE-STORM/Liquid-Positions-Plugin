@@ -99,10 +99,12 @@ describe("LPPlugin", () => {
         const receiptNFTMint = await trxNFTMint.wait()
         let tokenId: bigint = readTokenIdFromEvent(positionManager, receiptNFTMint);
 
-        const trxTransferFrom = await positionManager.connect(signers[signedIndex])['safeTransferFrom(address,address,uint256)'](
+        const slippageData = ethers.AbiCoder.defaultAbiCoder().encode(['uint256', 'uint256'], [0, 0]);
+        const trxTransferFrom = await positionManager.connect(signers[signedIndex])['safeTransferFrom(address,address,uint256,bytes)'](
             signers[signedIndex].address,
             pluginAddr,
-            tokenId!
+            tokenId!,
+            slippageData
         )
         const receiptTransferFrom = await trxTransferFrom.wait()
         if (!receiptTransferFrom) throw new Error(`No receipt found`)

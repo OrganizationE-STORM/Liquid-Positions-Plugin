@@ -256,7 +256,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
+        (min0, min1) = INonfungiblePositionManager(
             msg.sender
         ).decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
@@ -269,22 +269,22 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             );
 
         // Collect tokens from the NFT
-        (amount0, amount1) = INonfungiblePositionManager(msg.sender).collect(
+        (min0, min1) = INonfungiblePositionManager(msg.sender).collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
                 recipient: address(this),
-                amount0Max: uint128(amount0),
-                amount1Max: uint128(amount1)
+                amount0Max: uint128(min0),
+                amount1Max: uint128(min1)
             })
         );
 
         // Approve tokens for reinvestment
         require(
-            IERC20(IAlgebraPool(pool).token0()).approve(callback, amount0),
+            IERC20(IAlgebraPool(pool).token0()).approve(callback, min0),
             "Token0 approval failed"
         );
         require(
-            IERC20(IAlgebraPool(pool).token1()).approve(callback, amount1),
+            IERC20(IAlgebraPool(pool).token1()).approve(callback, min1),
             "Token1 approval failed"
         );
 
@@ -298,8 +298,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             from,
             tickLower,
             tickUpper,
-            amount0,
-            amount1
+            min0,
+            min1
         );
 
         require(
