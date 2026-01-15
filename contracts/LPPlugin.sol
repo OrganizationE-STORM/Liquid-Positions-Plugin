@@ -29,18 +29,24 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
     struct CollectParams {
         address recipient;
-        uint128 liquidity;
         int24 tickLower;
         int24 tickUpper;
         uint256 lpTokensToBurn;
-        uint256 totalLPSupply;
-        uint128 fees0;
-        uint128 fees1;
     }
 
     struct Cache {
         uint256 initialValue;
         uint160 price;
+    }
+
+    // Cache used to avoid stack too deep in onERC721Received function
+    struct CacheBalancesOnERC721Received {
+        uint256 balanceToken0;
+        uint256 balanceToken1;
+    }
+
+    struct CacheWithdraw {
+        uint256 totalSupply;
     }
 
     /// @notice Default plugin configuration flag - includes position hooks, swap hooks, and dynamic fee capability
@@ -60,6 +66,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
     uint24 public pluginFeeRate;
     Cache private _cache;
+    CacheBalancesOnERC721Received private _cacheOnERC721Received;
+    CacheWithdraw private _cacheWithdraw;
 
     address public immutable callback;
 
@@ -167,23 +175,11 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         require(lpTokensToBurn > 0, "Invalid LP tokens value");
 
         ILPToken lpToken = ILPToken(lpTokenByTicks[tickLower][tickUpper]);
-        (uint256 liquidity, , , uint128 fees0, uint128 fees1) = IAlgebraPool(
-            pool
-        ).positions(getPositionKey(address(this), tickLower, tickUpper));
-        uint256 totalSupply = lpToken.totalSupply();
+        _cacheWithdraw = CacheWithdraw({totalSupply: lpToken.totalSupply()});
         _burnLPTokens(msg.sender, lpToken, lpTokensToBurn);
 
         (amount0, amount1) = _collect(
-            CollectParams(
-                recipient,
-                SafeCast.toUint128(liquidity),
-                tickLower,
-                tickUpper,
-                lpTokensToBurn,
-                totalSupply,
-                fees0,
-                fees1
-            )
+            CollectParams(recipient, tickLower, tickUpper, lpTokensToBurn)
         );
     }
 
@@ -278,11 +274,19 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
         // Approve tokens for reinvestment
         require(
-            IERC20(IAlgebraPool(pool).token0()).approve(callback, amount0),
+            IERC20(IAlgebraPool(pool).token0()).approve(
+                callback,
+                IERC20(token0).balanceOf(address(this)) -
+                    _cacheOnERC721Received.balanceToken0
+            ),
             "Token0 approval failed"
         );
         require(
-            IERC20(IAlgebraPool(pool).token1()).approve(callback, amount1),
+            IERC20(IAlgebraPool(pool).token1()).approve(
+                callback,
+                IERC20(token1).balanceOf(address(this)) -
+                    _cacheOnERC721Received.balanceToken1
+            ),
             "Token1 approval failed"
         );
 
@@ -296,8 +300,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             from,
             tickLower,
             tickUpper,
-            amount0,
-            amount1
+            IERC20(token0).balanceOf(address(this)) -
+                _cacheOnERC721Received.balanceToken0,
+            IERC20(token1).balanceOf(address(this)) -
+                _cacheOnERC721Received.balanceToken1
         );
 
         require(
@@ -416,17 +422,25 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     function _collect(
         CollectParams memory params
     ) private returns (uint256 amount0, uint256 amount1) {
+        (uint256 liquidity, , , , ) = IAlgebraPool(pool).positions(
+            getPositionKey(address(this), params.tickLower, params.tickUpper)
+        );
+
         (uint256 lAmount0, uint256 lAmount1) = IAlgebraPool(pool).burn(
             params.tickLower,
             params.tickUpper,
             SafeCast.toUint128(
                 Math.mulDiv(
                     params.lpTokensToBurn,
-                    params.liquidity,
-                    params.totalLPSupply
+                    SafeCast.toUint128(liquidity),
+                    _cacheWithdraw.totalSupply
                 )
             ),
             abi.encode(0)
+        );
+
+        (, , , uint128 fees0, uint128 fees1) = IAlgebraPool(pool).positions(
+            getPositionKey(address(this), params.tickLower, params.tickUpper)
         );
 
         (amount0, amount1) = IAlgebraPool(pool).collect(
@@ -437,16 +451,16 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        params.fees0,
-                        params.totalLPSupply
+                        fees0,
+                        _cacheWithdraw.totalSupply
                     )
                 ),
             SafeCast.toUint128(lAmount1) +
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        params.fees1,
-                        params.totalLPSupply
+                        fees1,
+                        _cacheWithdraw.totalSupply
                     )
                 )
         );
