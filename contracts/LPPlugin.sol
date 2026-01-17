@@ -60,7 +60,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     Cache private _cache;
 
     address public immutable callback;
-    uint8 private immutable decimalsToken1;
 
     /// @notice Constructor initializing pool and plugin factory
     constructor(
@@ -73,7 +72,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         // Initialize with a default plugin fee as of PPM
         // Perhaps redundant with the fee managing of the fee in the factory
         pluginFeeRate = 50000;
-        decimalsToken1 = IERC20Metadata(IAlgebraPool(_pool).token1()).decimals();
         emit FeeRateUpdated(pluginFeeRate);
     }
 
@@ -387,7 +385,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             // due to 'gifting' or rebasing tokens. (Up to a certain degree)
             // For the reference implementation: https://github.com/boringcrypto/YieldBox/blob/master/contracts/YieldBoxRebase.sol
             _cache.initialValue++;
-            lpToken.mint(address(0), 10 ** (uint256(decimalsToken1) * 10));
+            lpToken.mint(
+                address(this),
+                10 **
+                    (uint256(
+                        IERC20Metadata(IAlgebraPool(pool).token1()).decimals()
+                    ) + 1)
+            );
 
             lpTokensToMint = Math.mulDiv(
                 userValue,
