@@ -40,11 +40,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     }
 
     // Cache used to avoid stack too deep in onERC721Received function
-    struct CacheBalancesOnERC721Received {
-        uint256 balanceToken0;
-        uint256 balanceToken1;
-    }
-
     struct CacheWithdraw {
         uint256 totalSupply;
     }
@@ -66,7 +61,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
     uint24 public pluginFeeRate;
     Cache private _cache;
-    CacheBalancesOnERC721Received private _cacheOnERC721Received;
     CacheWithdraw private _cacheWithdraw;
 
     address public immutable callback;
@@ -274,19 +268,11 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
         // Approve tokens for reinvestment
         require(
-            IERC20(IAlgebraPool(pool).token0()).approve(
-                callback,
-                IERC20(token0).balanceOf(address(this)) -
-                    _cacheOnERC721Received.balanceToken0
-            ),
+            IERC20(IAlgebraPool(pool).token0()).approve(callback, amount0),
             "Token0 approval failed"
         );
         require(
-            IERC20(IAlgebraPool(pool).token1()).approve(
-                callback,
-                IERC20(token1).balanceOf(address(this)) -
-                    _cacheOnERC721Received.balanceToken1
-            ),
+            IERC20(IAlgebraPool(pool).token1()).approve(callback, amount1),
             "Token1 approval failed"
         );
 
@@ -300,10 +286,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             from,
             tickLower,
             tickUpper,
-            IERC20(token0).balanceOf(address(this)) -
-                _cacheOnERC721Received.balanceToken0,
-            IERC20(token1).balanceOf(address(this)) -
-                _cacheOnERC721Received.balanceToken1
+            amount0,
+            amount1
         );
 
         require(
