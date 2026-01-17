@@ -364,4 +364,110 @@ describe("LPPlugin - Branch Coverage", () => {
             ).to.be.revertedWith("Token1 approval failed");
         });
     });
+
+    describe('#_mintLPTokens - edge cases', () => {
+        const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
+
+        it('should mint INITIAL_LP_TOKEN_TO_MINT when totalSupply is 0 after full withdrawal', async () => {
+            const { callback, plugin, signers, token0, token1 } = await setup(2);
+            
+            await token0.connect(signers[1]).approve(callback, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(callback, ethers.MaxUint256);
+            await token0.connect(signers[2]).approve(callback, ethers.MaxUint256);
+            await token1.connect(signers[2]).approve(callback, ethers.MaxUint256);
+
+            const tickLower = -120;
+            const tickUpper = 120;
+
+            // User 1 creates a position (first deposit - LP token is created)
+            await callback.connect(signers[1]).mint(
+                signers[1].address,
+                tickLower,
+                tickUpper,
+                ethers.parseEther('1'),
+                ethers.parseEther('1')
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper);
+            const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
+            
+            // Verify user1 got INITIAL_LP_TOKEN_TO_MINT
+            const user1Balance = await lpToken.balanceOf(signers[1].address);
+            expect(user1Balance).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+
+            // User 1 withdraws ALL their LP tokens (totalSupply becomes 0)
+            await plugin.connect(signers[1]).withdraw(
+                signers[1].address,
+                tickLower,
+                tickUpper,
+                user1Balance
+            );
+
+            // Verify totalSupply is now 0
+            const totalSupplyAfterWithdraw = await lpToken.totalSupply();
+            expect(totalSupplyAfterWithdraw).to.equal(0n);
+
+            // User 2 deposits to the same tick range
+            // This should trigger the else branch: totalSupply == 0
+            await callback.connect(signers[2]).mint(
+                signers[2].address,
+                tickLower,
+                tickUpper,
+                ethers.parseEther('1'),
+                ethers.parseEther('1')
+            );
+
+            // User 2 should receive INITIAL_LP_TOKEN_TO_MINT (fallback case)
+            const user2Balance = await lpToken.balanceOf(signers[2].address);
+            expect(user2Balance).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+        });
+
+        it('should mint at least 1 LP token when calculated amount rounds to 0', async () => {
+            const { callback, plugin, signers, token0, token1, pool } = await setup(2);
+            
+            await token0.connect(signers[1]).approve(callback, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(callback, ethers.MaxUint256);
+            await token0.connect(signers[2]).approve(callback, ethers.MaxUint256);
+            await token1.connect(signers[2]).approve(callback, ethers.MaxUint256);
+
+            const tickLower = -120;
+            const tickUpper = 120;
+
+            // User 1 creates a VERY LARGE position
+            await callback.connect(signers[1]).mint(
+                signers[1].address,
+                tickLower,
+                tickUpper,
+                ethers.parseEther('1000000'), // 1 million tokens
+                ethers.parseEther('1000000')
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper);
+            const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
+            
+            const totalSupplyBefore = await lpToken.totalSupply();
+            const state = await pool.globalState();
+            const initialValue = await plugin.positionValue(tickLower, tickUpper, state.price);
+
+            // User 2 deposits a TINY amount
+            // The formula: lpTokensToMint = (userValue * totalSupply) / initialValue
+            // If userValue is tiny and initialValue is huge, this can round to 0
+            await callback.connect(signers[2]).mint(
+                signers[2].address,
+                tickLower,
+                tickUpper,
+                1n, // Just 1 wei
+                1n  // Just 1 wei
+            );
+
+            const user2Balance = await lpToken.balanceOf(signers[2].address);
+            
+            // Should have received at least 1 LP token (the minimum)
+            expect(user2Balance).to.be.gte(1n);
+            
+            // Log for debugging - this helps verify we actually hit the edge case
+            console.log(`User2 received ${user2Balance} LP tokens for tiny deposit`);
+            console.log(`Total supply before: ${totalSupplyBefore}, initialValue: ${initialValue}`);
+        });
+    });
 });
