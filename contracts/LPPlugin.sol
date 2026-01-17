@@ -55,13 +55,12 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     // Plugin state variables
     mapping(int24 => mapping(int24 => address)) public lpTokenByTicks; // Maps tick ranges to LPToken addresses
 
-    uint256 private constant INITIAL_LP_TOKEN_TO_MINT = 10 ** 32;
-
     /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
     uint24 public pluginFeeRate;
     Cache private _cache;
 
     address public immutable callback;
+    uint8 private immutable decimalsToken1;
 
     /// @notice Constructor initializing pool and plugin factory
     constructor(
@@ -74,6 +73,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         // Initialize with a default plugin fee as of PPM
         // Perhaps redundant with the fee managing of the fee in the factory
         pluginFeeRate = 50000;
+        decimalsToken1 = IERC20Metadata(IAlgebraPool(_pool).token1()).decimals();
         emit FeeRateUpdated(pluginFeeRate);
     }
 
@@ -349,7 +349,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         int24 tickUpper,
         uint256 amount0,
         uint256 amount1
-    ) private {        
+    ) private {
         address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
         uint256 lpTokensToMint;
         ILPToken lpToken;
@@ -364,12 +364,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 "-",
                 Strings.toStringSigned(int256(tickUpper))
             );
-            address newTokenAddress = ILPTokenFactory(ILPPluginFactory(pluginFactory).lpTokenFactory()).create(string.concat("LPToken ", tokenName), tokenName);
+            address newTokenAddress = ILPTokenFactory(
+                ILPPluginFactory(pluginFactory).lpTokenFactory()
+            ).create(string.concat("LPToken ", tokenName), tokenName);
             lpToken = ILPToken(newTokenAddress);
 
             emit TokenCreated(tickLower, tickUpper, newTokenAddress);
             lpTokenByTicks[tickLower][tickUpper] = newTokenAddress;
-            lpTokensToMint = INITIAL_LP_TOKEN_TO_MINT;
         } else {
             lpToken = ILPToken(lpTokenAddress);
             uint256 totalSupply = lpToken.totalSupply();
@@ -381,20 +382,22 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 convertToken0ToToken1(amount0, _cache.price);
 
             // Apply the formula: lpTokensToMint = (deltaValue * totalSupply) / preValue
-            if (_cache.initialValue > 0 && totalSupply > 0) {
-                lpTokensToMint = Math.mulDiv(
-                    userValue,
-                    totalSupply,
-                    _cache.initialValue
-                );
-            } else {
-                // Fallback for edge cases (first deposit, zero pre-value, etc.)
-                lpTokensToMint = INITIAL_LP_TOKEN_TO_MINT;
-            }
+            // To prevent reseting the ratio due to withdrawal of all shares, we start with
+            // 1 amount/1e(decimals of token 1 + 1 decimal) shares already burned. This prevents ratio attacks or inaccuracy
+            // due to 'gifting' or rebasing tokens. (Up to a certain degree)
+            // For the reference implementation: https://github.com/boringcrypto/YieldBox/blob/master/contracts/YieldBoxRebase.sol
+            _cache.initialValue++;
+            lpToken.mint(address(0), 10 ** (uint256(decimalsToken1) * 10));
+
+            lpTokensToMint = Math.mulDiv(
+                userValue,
+                totalSupply,
+                _cache.initialValue
+            );
             // Ensure minimum lpToken amount to prevent zero minting
-            if (lpTokensToMint == 0 && userValue > 0) {
-                lpTokensToMint = 1;
-            }
+            // if (lpTokensToMint == 0 && userValue > 0) {
+            //     lpTokensToMint = 1;
+            // }
         }
         // Mint proportional lptoken to user
         lpToken.mint(recipient, lpTokensToMint);
