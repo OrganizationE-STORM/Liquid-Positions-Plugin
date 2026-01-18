@@ -303,7 +303,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 from,
                 ILPToken(lpTokenByTicks[tickLower][tickUpper]).balanceOf(
                     address(this)
-                ) - currentAmount
+                ) -
+                    currentAmount -
+                    10 **
+                        (uint256(
+                            IERC20Metadata(IAlgebraPool(pool).token1())
+                                .decimals()
+                        ) + 1)
             ),
             "Transfer failed"
         );
@@ -372,8 +378,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             lpTokenByTicks[tickLower][tickUpper] = newTokenAddress;
         }
 
-        
-
         // Calculate delta value: deltaY + deltaX * P (safe fixed-point arithmetic)
         // deltaY = amount0 (token1 being deposited)
         // deltaX = depositAmount0 (token0 being deposited)
@@ -386,7 +390,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         // due to 'gifting' or rebasing tokens. (Up to a certain degree)
         // For the reference implementation: https://github.com/boringcrypto/YieldBox/blob/master/contracts/YieldBoxRebase.sol
         _cache.initialValue++;
-        
+
         lpToken = ILPToken(lpTokenAddress);
         lpToken.mint(
             address(this),

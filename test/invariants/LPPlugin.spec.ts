@@ -75,7 +75,12 @@ describe("LPPlugin", () => {
 
                 let token0InToken1 = await plugin.convertToken0ToToken1(amount0New, state.price)
                 let userValue = amount1New + token0InToken1
-                const lpTokensToMint = (userValue * totalSupply) / initialValue
+                // Account for the contract's anti-ratio-attack mechanism:
+                // 1. _cache.initialValue is incremented by 1
+                // 2. 10^(decimals+1) tokens are minted to address(this) before calculating
+                const adjustedTotalSupply = totalSupply + (10n ** (decimals + 1n))
+                const adjustedInitialValue = initialValue + 1n
+                const lpTokensToMint = (userValue * adjustedTotalSupply) / adjustedInitialValue
                 const secondUserBalance = await lpToken.balanceOf(signers[2].address)
 
                 totalSupply = await lpToken.totalSupply()
@@ -96,7 +101,10 @@ describe("LPPlugin", () => {
 
                 token0InToken1 = await plugin.convertToken0ToToken1(amount0NewThirdMint, state.price)
                 userValue = amount1NewThirdMint + token0InToken1
-                const lpTokensToMintForThirdUser = (userValue * totalSupply) / initialValue
+                // Same adjustment for third user calculation
+                const adjustedTotalSupply3 = totalSupply + (10n ** (decimals + 1n))
+                const adjustedInitialValue3 = initialValue + 1n
+                const lpTokensToMintForThirdUser = (userValue * adjustedTotalSupply3) / adjustedInitialValue3
                 const balanceThirdUser = await lpToken.balanceOf(signers[3].address)
 
                 expect(receiptThirdMint).to.not.be.undefined

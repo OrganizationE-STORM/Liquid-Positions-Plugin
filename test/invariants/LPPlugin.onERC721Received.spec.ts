@@ -149,7 +149,7 @@ describe("LPPlugin", () => {
             for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
                 const usersInTest = 3
                 const vars = await setup(usersInTest);
-                const { plugin, signers, pool } = vars
+                const { plugin, signers, pool, token1 } = vars
 
                 const { tickLower, tickUpper, amount0Desired, amount1Desired } = generateParamsForTest()
                 if (tickLower === tickUpper) continue;
@@ -186,10 +186,16 @@ describe("LPPlugin", () => {
                     const { amount0, amount1 } = readNewAmountsFromMintEvent(receiptTransferFrom, callback)
                     let token0InToken1 = await plugin.convertToken0ToToken1(amount0, state.price)
                     let userValue = amount1 + token0InToken1
-                    const lpTokensToMint = (userValue * totalSupply) / initialValue
+                    const decimals = await token1.decimals()
+                    const antiRatioTokens = 10n ** (decimals + 1n)
+                    const adjustedTotalSupply = totalSupply + antiRatioTokens
+                    const adjustedInitialValue = initialValue + 1n
+                    const lpTokensToMint = (userValue * adjustedTotalSupply) / adjustedInitialValue
+                    const expectedUserBalance = lpTokensToMint
+
                     const userBalance = await lpToken.balanceOf(signers[i].address)
 
-                    expect(userBalance).to.be.equals(lpTokensToMint)
+                    expect(userBalance).to.be.equals(expectedUserBalance)
                 }
 
                 currentTest++
