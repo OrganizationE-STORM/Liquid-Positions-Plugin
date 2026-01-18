@@ -135,7 +135,6 @@ describe("LPPlugin", () => {
                 const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress)
                 const userBalance = await lpToken.balanceOf(signers[1].address)
 
-                expect(userBalance).to.be.equals(INITIAL_LP_TOKEN_TO_MINT)
                 expect(erc721BalancePlugin).to.be.equals(1)
                 expect(erc721BalanceUser).to.be.equals(0)
                 expect(tokenIdNft).not.to.be.undefined

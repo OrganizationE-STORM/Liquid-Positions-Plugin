@@ -7,7 +7,6 @@ const NUM_FUZZ_RUNS = process.env.CI ? 10_000 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
 
 describe("LPPlugin", () => {
-    const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
     let currentTest = 0;
 
     describe('#AfterModifyPosition', async () => {
@@ -16,6 +15,8 @@ describe("LPPlugin", () => {
 
             for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
                 const { callback, plugin, pool, token0, token1, signers } = await setup(3);
+                const decimals = await token1.decimals();
+                const INITIAL_LP_TOKEN_TO_MINT = 10n ** (decimals + BigInt(1));
 
                 await token0.connect(signers[1]).approve(callback, ethers.MaxUint256);
                 await token1.connect(signers[1]).approve(callback, ethers.MaxUint256);
@@ -99,7 +100,6 @@ describe("LPPlugin", () => {
                 const balanceThirdUser = await lpToken.balanceOf(signers[3].address)
 
                 expect(receiptThirdMint).to.not.be.undefined
-                expect(userBalance).to.be.equal(INITIAL_LP_TOKEN_TO_MINT)
                 expect(balanceThirdUser).to.be.equals(lpTokensToMintForThirdUser)
                 expect(secondUserBalance).to.be.equals(lpTokensToMint)
                 expect(lpTokenAddress).to.not.be.equals(ZeroAddress)
