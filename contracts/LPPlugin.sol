@@ -43,12 +43,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint160 price;
     }
 
-    // Cache used to avoid stack too deep in onERC721Received function
-    struct CacheBalancesOnERC721Received {
-        uint256 balanceToken0;
-        uint256 balanceToken1;
-    }
-
     /// @notice Default plugin configuration flag - includes position hooks, swap hooks, and dynamic fee capability
     uint8 public constant override defaultPluginConfig =
         uint8(
@@ -66,8 +60,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
     uint24 public pluginFeeRate;
     Cache private _cache;
-    CacheBalancesOnERC721Received private _cacheOnERC721Received;
-
     address public immutable callback;
 
     /// @notice Constructor initializing pool and plugin factory
@@ -260,10 +252,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             "Tokens do not match"
         );
 
-        _cacheOnERC721Received = CacheBalancesOnERC721Received({
-            balanceToken0: IERC20(token0).balanceOf(address(this)),
-            balanceToken1: IERC20(token1).balanceOf(address(this))
-        });
+        uint256 preBalanceToken0 = IERC20(token0).balanceOf(address(this));
+        uint256 preBalanceToken1 = IERC20(token1).balanceOf(address(this));
 
         // Decrease liquidity from user's latest NFT
         (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
@@ -292,14 +282,16 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         require(
             IERC20(IAlgebraPool(pool).token0()).approve(
                 callback,
-                IERC20(token0).balanceOf(address(this)) - _cacheOnERC721Received.balanceToken0
+                IERC20(token0).balanceOf(address(this)) -
+                    preBalanceToken0
             ),
             "Token0 approval failed"
         );
         require(
             IERC20(IAlgebraPool(pool).token1()).approve(
                 callback,
-                IERC20(token1).balanceOf(address(this)) - _cacheOnERC721Received.balanceToken1
+                IERC20(token1).balanceOf(address(this)) -
+                    preBalanceToken1
             ),
             "Token1 approval failed"
         );
@@ -314,8 +306,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             from,
             tickLower,
             tickUpper,
-            IERC20(token0).balanceOf(address(this)) - _cacheOnERC721Received.balanceToken0,
-            IERC20(token1).balanceOf(address(this)) - _cacheOnERC721Received.balanceToken1
+            IERC20(token0).balanceOf(address(this)) -
+                preBalanceToken0,
+            IERC20(token1).balanceOf(address(this)) -
+                preBalanceToken1
         );
 
         require(
