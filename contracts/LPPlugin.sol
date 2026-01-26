@@ -38,7 +38,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint128 fees1;
     }
 
-    // These caches are used to avoid stack too deep
     struct Cache {
         uint256 initialValue;
         uint160 price;
