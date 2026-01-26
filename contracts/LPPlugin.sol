@@ -435,7 +435,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        fees0,
+                        (fees0 - lAmount0),
                         _cacheWithdraw.totalSupply
                     )
                 ),
@@ -443,7 +443,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        fees1,
+                        (fees1 - lAmount1),
                         _cacheWithdraw.totalSupply
                     )
                 )
