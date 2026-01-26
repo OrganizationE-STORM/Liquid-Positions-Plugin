@@ -38,9 +38,15 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint128 fees1;
     }
 
+    // These caches are used to avoid stack too deep
     struct Cache {
         uint256 initialValue;
         uint160 price;
+    }
+
+    struct CacheAmountsOnERC721Received {
+        uint256 amount0;
+        uint256 amount1;
     }
 
     /// @notice Default plugin configuration flag - includes position hooks, swap hooks, and dynamic fee capability
@@ -60,6 +66,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
     uint24 public pluginFeeRate;
     Cache private _cache;
+    CacheAmountsOnERC721Received private _cacheAmountsOnERC721Received;
 
     address public immutable callback;
 
@@ -233,7 +240,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         bytes calldata data
     ) external override returns (bytes4) {
         (uint256 min0, uint256 min1) = abi.decode(data, (uint256, uint256));
-        
+
         (
             ,
             ,
@@ -256,9 +263,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (min0, min1) = INonfungiblePositionManager(
-            msg.sender
-        ).decreaseLiquidity(
+        (_cacheAmountsOnERC721Received.amount0, _cacheAmountsOnERC721Received.amount1) = INonfungiblePositionManager(msg.sender)
+            .decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: userLiquidity,
@@ -269,22 +275,22 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             );
 
         // Collect tokens from the NFT
-        (min0, min1) = INonfungiblePositionManager(msg.sender).collect(
+        (_cacheAmountsOnERC721Received.amount0, _cacheAmountsOnERC721Received.amount1) = INonfungiblePositionManager(msg.sender).collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
                 recipient: address(this),
-                amount0Max: uint128(min0),
-                amount1Max: uint128(min1)
+                amount0Max: uint128(_cacheAmountsOnERC721Received.amount0),
+                amount1Max: uint128(_cacheAmountsOnERC721Received.amount1)
             })
         );
 
         // Approve tokens for reinvestment
         require(
-            IERC20(IAlgebraPool(pool).token0()).approve(callback, min0),
+            IERC20(IAlgebraPool(pool).token0()).approve(callback, _cacheAmountsOnERC721Received.amount0),
             "Token0 approval failed"
         );
         require(
-            IERC20(IAlgebraPool(pool).token1()).approve(callback, min1),
+            IERC20(IAlgebraPool(pool).token1()).approve(callback, _cacheAmountsOnERC721Received.amount1),
             "Token1 approval failed"
         );
 
@@ -294,13 +300,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ? ILPToken(lpTokenAddress).balanceOf(address(this))
             : 0;
 
-        ILPCallback(callback).mint(
-            from,
-            tickLower,
-            tickUpper,
-            min0,
-            min1
-        );
+        ILPCallback(callback).mint(from, tickLower, tickUpper, _cacheAmountsOnERC721Received.amount0, _cacheAmountsOnERC721Received.amount1);
 
         require(
             ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
@@ -351,7 +351,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         int24 tickUpper,
         uint256 amount0,
         uint256 amount1
-    ) private {        
+    ) private {
         address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
         uint256 lpTokensToMint;
         ILPToken lpToken;
@@ -366,7 +366,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 "-",
                 Strings.toStringSigned(int256(tickUpper))
             );
-            address newTokenAddress = ILPTokenFactory(ILPPluginFactory(pluginFactory).lpTokenFactory()).create(string.concat("LPToken ", tokenName), tokenName);
+            address newTokenAddress = ILPTokenFactory(
+                ILPPluginFactory(pluginFactory).lpTokenFactory()
+            ).create(string.concat("LPToken ", tokenName), tokenName);
             lpToken = ILPToken(newTokenAddress);
 
             emit TokenCreated(tickLower, tickUpper, newTokenAddress);
