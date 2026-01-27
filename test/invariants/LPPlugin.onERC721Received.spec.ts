@@ -5,12 +5,10 @@ import type { ContractTransactionReceipt } from "ethers"
 import { INonfungiblePositionManager, LPCallback } from '../../typechain-types';
 import { PluginFixture } from '../shared/fixtures';
 
-const NUM_FUZZ_RUNS = process.env.CI ? 10_000 : 2;
+const NUM_FUZZ_RUNS = process.env.CI ? 10_000 : 20;
 const TIMEOUT_TESTS = 100_000_000_000_000;
 
 describe("LPPlugin", () => {
-    const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
-
     const readTokenIdFromEvent = (
         positionManager: INonfungiblePositionManager,
         receipt: ContractTransactionReceipt | null
@@ -191,7 +189,7 @@ describe("LPPlugin", () => {
                     const adjustedTotalSupply = totalSupply + antiRatioTokens
                     const adjustedInitialValue = initialValue + 1n
                     const lpTokensToMint = (userValue * adjustedTotalSupply) / adjustedInitialValue
-                    const expectedUserBalance = lpTokensToMint
+                    const expectedUserBalance = lpTokensToMint - antiRatioTokens
 
                     const userBalance = await lpToken.balanceOf(signers[i].address)
 

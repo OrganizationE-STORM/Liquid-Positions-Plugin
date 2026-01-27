@@ -384,31 +384,22 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint256 userValue = amount1 +
             convertToken0ToToken1(amount0, _cache.price);
 
-        // Apply the formula: lpTokensToMint = (deltaValue * totalSupply) / preValue
-        // To prevent reseting the ratio due to withdrawal of all shares, we start with
-        // 1 amount/1e(decimals of token 1 + 1 decimal) shares already burned. This prevents ratio attacks or inaccuracy
-        // due to 'gifting' or rebasing tokens. (Up to a certain degree)
-        // For the reference implementation: https://github.com/boringcrypto/YieldBox/blob/master/contracts/YieldBoxRebase.sol
-        _cache.initialValue++;
-
         lpToken = ILPToken(lpTokenAddress);
-        lpToken.mint(
-            address(this),
-            10 **
-                (uint256(
-                    IERC20Metadata(IAlgebraPool(pool).token1()).decimals()
-                ) + 1)
-        );
 
         lpTokensToMint = Math.mulDiv(
             userValue,
-            lpToken.totalSupply(),
-            _cache.initialValue
+            lpToken.totalSupply() +
+                10 **
+                    (uint256(
+                        IERC20Metadata(IAlgebraPool(pool).token1()).decimals()
+                    ) + 1), // adding virtual supply to avoid inflation attack 
+            _cache.initialValue + 1,
+            Math.Rounding.Floor
         );
         // Ensure minimum lpToken amount to prevent zero minting
-        // if (lpTokensToMint == 0 && userValue > 0) {
-        //     lpTokensToMint = 1;
-        // }
+        if (lpTokensToMint == 0 && userValue > 0) {
+            lpTokensToMint = 1;
+        }
 
         // Mint proportional lptoken to user
         lpToken.mint(recipient, lpTokensToMint);
