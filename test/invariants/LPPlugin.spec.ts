@@ -80,7 +80,7 @@ describe("LPPlugin", () => {
                 // 2. 10^(decimals+1) tokens are minted to address(this) before calculating
                 const adjustedTotalSupply = totalSupply + (10n ** (decimals + 1n))
                 const adjustedInitialValue = initialValue + 1n
-                const lpTokensToMint = (userValue * adjustedTotalSupply) / adjustedInitialValue
+                const lpTokensToMint = (userValue * adjustedTotalSupply + adjustedInitialValue - 1n) / adjustedInitialValue
                 const secondUserBalance = await lpToken.balanceOf(signers[2].address)
 
                 totalSupply = await lpToken.totalSupply()
@@ -104,7 +104,7 @@ describe("LPPlugin", () => {
                 // Same adjustment for third user calculation
                 const adjustedTotalSupply3 = totalSupply + (10n ** (decimals + 1n))
                 const adjustedInitialValue3 = initialValue + 1n
-                const lpTokensToMintForThirdUser = (userValue * adjustedTotalSupply3) / adjustedInitialValue3
+                const lpTokensToMintForThirdUser = (userValue * adjustedTotalSupply3 + adjustedInitialValue3 - 1n) / adjustedInitialValue3
                 const balanceThirdUser = await lpToken.balanceOf(signers[3].address)
 
                 expect(receiptThirdMint).to.not.be.undefined
