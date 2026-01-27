@@ -32,16 +32,12 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         int24 tickLower;
         int24 tickUpper;
         uint256 lpTokensToBurn;
+        uint256 totalSupplyBeforeBurn;
     }
 
     struct Cache {
         uint256 initialValue;
         uint160 price;
-    }
-
-    // Cache used to avoid stack too deep in onERC721Received function
-    struct CacheWithdraw {
-        uint256 totalSupply;
     }
 
     /// @notice Default plugin configuration flag - includes position hooks, swap hooks, and dynamic fee capability
@@ -61,7 +57,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
     uint24 public pluginFeeRate;
     Cache private _cache;
-    CacheWithdraw private _cacheWithdraw;
 
     address public immutable callback;
 
@@ -169,11 +164,11 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         require(lpTokensToBurn > 0, "Invalid LP tokens value");
 
         ILPToken lpToken = ILPToken(lpTokenByTicks[tickLower][tickUpper]);
-        _cacheWithdraw = CacheWithdraw({totalSupply: lpToken.totalSupply()});
+        uint256 totalSupplyBeforeBurn = lpToken.totalSupply();
         _burnLPTokens(msg.sender, lpToken, lpTokensToBurn);
 
         (amount0, amount1) = _collect(
-            CollectParams(recipient, tickLower, tickUpper, lpTokensToBurn)
+            CollectParams(recipient, tickLower, tickUpper, lpTokensToBurn, totalSupplyBeforeBurn)
         );
     }
 
@@ -417,7 +412,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 Math.mulDiv(
                     params.lpTokensToBurn,
                     SafeCast.toUint128(liquidity),
-                    _cacheWithdraw.totalSupply
+                    params.totalSupplyBeforeBurn
                 )
             ),
             abi.encode(0)
@@ -436,7 +431,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                     Math.mulDiv(
                         params.lpTokensToBurn,
                         (fees0 - lAmount0),
-                        _cacheWithdraw.totalSupply
+                        params.totalSupplyBeforeBurn
                     )
                 ),
             SafeCast.toUint128(lAmount1) +
@@ -444,7 +439,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                     Math.mulDiv(
                         params.lpTokensToBurn,
                         (fees1 - lAmount1),
-                        _cacheWithdraw.totalSupply
+                        params.totalSupplyBeforeBurn
                     )
                 )
         );
