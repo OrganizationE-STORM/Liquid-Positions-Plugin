@@ -389,7 +389,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                         IERC20Metadata(IAlgebraPool(pool).token1()).decimals()
                     ) + 1), // adding virtual supply to avoid inflation attack 
             _cache.initialValue + 1,
-            Math.Rounding.Ceil
+            Math.Rounding.Floor
         );
 
         // Mint proportional lptoken to user
