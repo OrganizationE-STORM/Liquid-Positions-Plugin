@@ -396,10 +396,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             _cache.initialValue + 1,
             Math.Rounding.Ceil
         );
-        // Ensure minimum lpToken amount to prevent zero minting
-        if (lpTokensToMint == 0 && userValue > 0) {
-            lpTokensToMint = 1;
-        }
 
         // Mint proportional lptoken to user
         lpToken.mint(recipient, lpTokensToMint);

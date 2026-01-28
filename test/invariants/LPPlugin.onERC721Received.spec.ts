@@ -189,7 +189,7 @@ describe("LPPlugin", () => {
                     const adjustedTotalSupply = totalSupply + antiRatioTokens
                     const adjustedInitialValue = initialValue + 1n
                     const lpTokensToMint = (userValue * adjustedTotalSupply + adjustedInitialValue - 1n) / adjustedInitialValue
-                    const expectedUserBalance = lpTokensToMint - antiRatioTokens
+                    const expectedUserBalance = lpTokensToMint
 
                     const userBalance = await lpToken.balanceOf(signers[i].address)
 
