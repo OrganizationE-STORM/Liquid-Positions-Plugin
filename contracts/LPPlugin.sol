@@ -304,12 +304,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 ILPToken(lpTokenByTicks[tickLower][tickUpper]).balanceOf(
                     address(this)
                 ) -
-                    currentAmount -
-                    10 **
-                        (uint256(
-                            IERC20Metadata(IAlgebraPool(pool).token1())
-                                .decimals()
-                        ) + 1)
+                    currentAmount 
             ),
             "Transfer failed"
         );
