@@ -275,6 +275,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 amount1Max: uint128(amount1)
             })
         );
+        INonfungiblePositionManager(msg.sender).burn(tokenId);
 
         // Approve tokens for reinvestment
         require(
