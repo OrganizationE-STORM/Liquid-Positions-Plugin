@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 // Core libraries and abstract plugin contract for Algebra protocol
 import "@cryptoalgebra/abstract-plugin/contracts/AbstractPlugin.sol";
@@ -48,8 +48,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint8(
             Plugins.AFTER_POSITION_MODIFY_FLAG |
                 Plugins.BEFORE_SWAP_FLAG |
-                Plugins.BEFORE_POSITION_MODIFY_FLAG |
-                Plugins.DYNAMIC_FEE
+                Plugins.BEFORE_POSITION_MODIFY_FLAG
         );
 
     // Plugin state variables
@@ -229,8 +228,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         address,
         address from,
         uint256 tokenId,
-        bytes calldata
+        bytes calldata data
     ) external override returns (bytes4) {
+        (uint256 min0, uint256 min1) = abi.decode(data, (uint256, uint256));
+
         (
             ,
             ,
@@ -256,14 +257,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint256 preBalanceToken1 = IERC20(token1).balanceOf(address(this));
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
-            msg.sender
-        ).decreaseLiquidity(
+        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(msg.sender)
+            .decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: userLiquidity,
-                    amount0Min: 0,
-                    amount1Min: 0,
+                    amount0Min: min0,
+                    amount1Min: min1,
                     deadline: block.timestamp + 10 minutes
                 })
             );
@@ -277,6 +277,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 amount1Max: uint128(amount1)
             })
         );
+        INonfungiblePositionManager(msg.sender).burn(tokenId);
 
         // Approve tokens for reinvestment
         require(
