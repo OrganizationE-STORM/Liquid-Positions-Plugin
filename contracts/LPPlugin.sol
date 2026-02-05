@@ -229,8 +229,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         address,
         address from,
         uint256 tokenId,
-        bytes calldata
+        bytes calldata data
     ) external override returns (bytes4) {
+        (uint256 min0, uint256 min1) = abi.decode(data, (uint256, uint256));
+
         (
             ,
             ,
@@ -253,14 +255,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
-            msg.sender
-        ).decreaseLiquidity(
+        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(msg.sender)
+            .decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: userLiquidity,
-                    amount0Min: 0,
-                    amount1Min: 0,
+                    amount0Min: min0,
+                    amount1Min: min1,
                     deadline: block.timestamp + 10 minutes
                 })
             );
@@ -291,13 +292,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ? ILPToken(lpTokenAddress).balanceOf(address(this))
             : 0;
 
-        ILPCallback(callback).mint(
-            from,
-            tickLower,
-            tickUpper,
-            amount0,
-            amount1
-        );
+        ILPCallback(callback).mint(from, tickLower, tickUpper, amount0, amount1);
 
         require(
             ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
@@ -348,7 +343,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         int24 tickUpper,
         uint256 amount0,
         uint256 amount1
-    ) private {        
+    ) private {
         address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
         uint256 lpTokensToMint;
         ILPToken lpToken;
@@ -363,7 +358,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 "-",
                 Strings.toStringSigned(int256(tickUpper))
             );
-            address newTokenAddress = ILPTokenFactory(ILPPluginFactory(pluginFactory).lpTokenFactory()).create(string.concat("LPToken ", tokenName), tokenName);
+            address newTokenAddress = ILPTokenFactory(
+                ILPPluginFactory(pluginFactory).lpTokenFactory()
+            ).create(string.concat("LPToken ", tokenName), tokenName);
             lpToken = ILPToken(newTokenAddress);
 
             emit TokenCreated(tickLower, tickUpper, newTokenAddress);
