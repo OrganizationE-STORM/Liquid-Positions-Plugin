@@ -16,7 +16,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/interfaces/IERC721Receiver.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-
 import "./LPCallback.sol";
 import {ILPToken} from "./interfaces/ILPToken.sol";
 import {ILPTokenFactory} from "./interfaces/ILPTokenFactory.sol";
@@ -45,7 +44,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint8(
             Plugins.AFTER_POSITION_MODIFY_FLAG |
                 Plugins.BEFORE_SWAP_FLAG |
-                Plugins.BEFORE_POSITION_MODIFY_FLAG
+                Plugins.BEFORE_POSITION_MODIFY_FLAG |
+                Plugins.DYNAMIC_FEE
         );
 
     // Plugin state variables
@@ -53,7 +53,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
     uint256 private constant INITIAL_LP_TOKEN_TO_MINT = 10 ** 32;
 
-    /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
+    /// @notice Plugin fee rate in PPM - portion of base fee that goes to plugin (e.g., 50000 = 5%)
     uint24 public pluginFeeRate;
     Cache private _cache;
 
@@ -62,14 +62,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     /// @notice Constructor initializing pool and plugin factory
     constructor(
         address _pool,
-        address _pluginFactory
+        address _pluginFactory,
+        uint24 _pluginFeeRate
     ) AbstractPlugin(_pool, _pluginFactory) {
         callback = address(
             new LPCallback(_pool, _pluginFactory, address(this))
         );
-        // Initialize with a default plugin fee as of PPM
-        // Perhaps redundant with the fee managing of the fee in the factory
-        pluginFeeRate = 50000;
+        pluginFeeRate = _pluginFeeRate;
         emit FeeRateUpdated(pluginFeeRate);
     }
 
@@ -140,17 +139,11 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         bool,
         bytes calldata
     ) external virtual override onlyPool returns (bytes4, uint24, uint24) {
-        uint24 fee;
-        try IAlgebraPool(pool).fee() {
-            fee = SafeCast.toUint24(
-                Math.mulDiv(IAlgebraPool(pool).fee(), pluginFeeRate, 10 ** 6)
-            );
-        } catch {
-            (, , uint16 baseFee, ) = _getPoolState();
-            fee = SafeCast.toUint24(
-                Math.mulDiv(baseFee, pluginFeeRate, 10 ** 6)
-            );
-        }
+        (, , uint16 baseFee, ) = _getPoolState();
+        // This fee is a percentage calculated on top of the already existing pool fee
+        uint24 fee = SafeCast.toUint24(
+            Math.mulDiv(baseFee, pluginFeeRate, 10 ** 6)
+        );
         return (IAlgebraPlugin.beforeSwap.selector, 0, fee);
     }
 
@@ -167,7 +160,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         _burnLPTokens(msg.sender, lpToken, lpTokensToBurn);
 
         (amount0, amount1) = _collect(
-            CollectParams(recipient, tickLower, tickUpper, lpTokensToBurn, totalSupplyBeforeBurn)
+            CollectParams(
+                recipient,
+                tickLower,
+                tickUpper,
+                lpTokensToBurn,
+                totalSupplyBeforeBurn
+            )
         );
     }
 
@@ -207,6 +206,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         _authorize();
         require(newFeeRate < 250000, "Fee rate too high");
         pluginFeeRate = newFeeRate;
+        emit FeeRateUpdated(newFeeRate);
     }
 
     /// @notice ERC721 callback to allow plugin to receive NFT
@@ -240,8 +240,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(msg.sender)
-            .decreaseLiquidity(
+        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
+            msg.sender
+        ).decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: userLiquidity,
@@ -278,7 +279,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ? ILPToken(lpTokenAddress).balanceOf(address(this))
             : 0;
 
-        ILPCallback(callback).mint(from, tickLower, tickUpper, amount0, amount1);
+        ILPCallback(callback).mint(
+            from,
+            tickLower,
+            tickUpper,
+            amount0,
+            amount1
+        );
 
         require(
             ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(

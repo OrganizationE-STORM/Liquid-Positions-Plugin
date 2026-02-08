@@ -21,6 +21,7 @@ contract LPPluginFactory is
 {
     address public immutable WNativeToken;
     address public immutable lpTokenFactory;
+    uint24 private immutable defaultPluginFeeRate; 
 
     /// @notice Emitted when a new LPPlugin instance is deployed
     /// @param pool The address of the associated Algebra Pool
@@ -42,6 +43,7 @@ contract LPPluginFactory is
     ) AbstractCustomPluginFactory(_entryPoint) Ownable(msg.sender) {
         WNativeToken = _WNativeToken;
         lpTokenFactory = _lpTokenFactory;
+        defaultPluginFeeRate = 50000;
     }
 
     function setTickSpacing(
@@ -71,8 +73,10 @@ contract LPPluginFactory is
         );
     }
 
-    function setFee(address pool, uint16 newFee) external onlyOwner {
-        IAlgebraCustomPoolEntryPoint(entryPoint).setFee(pool, newFee);
+    /// @notice Disabled - setFee is incompatible with DYNAMIC_FEE flag
+    /// @dev Use setBaseFee on the plugin instead to change the fee via getCurrentFee()
+    function setFee(address, uint16) external view onlyOwner {
+        revert("setFee disabled: use plugin.setBaseFee() instead");
     }
 
     function collectFee(
@@ -99,7 +103,8 @@ contract LPPluginFactory is
     }
 
     function _createPlugin(address pool) internal override returns (address) {
-        LPPlugin plugin = new LPPlugin(pool, address(this));
+        LPPlugin plugin = new LPPlugin(pool, address(this), defaultPluginFeeRate);
+        emit PluginDeployed(pool, address(plugin), msg.sender);
         return address(plugin);
     }
 
@@ -109,9 +114,9 @@ contract LPPluginFactory is
      * @param pool Address of the Algebra Pool this plugin will manage
      * @return plugin Address of the newly deployed LPPlugin instance
      */
-    function deploy(address pool) external onlyOwner returns (address plugin) {
+    function deploy(address pool, uint24 _pluginFee) external onlyOwner returns (address plugin) {
         // Deploy a new LPPlugin, passing the pool and the factory address
-        LPPlugin instance = new LPPlugin(pool, address(this));
+        LPPlugin instance = new LPPlugin(pool, address(this), _pluginFee);
         plugin = address(instance);
 
         // Emit event to signal that a new plugin has been deployed
