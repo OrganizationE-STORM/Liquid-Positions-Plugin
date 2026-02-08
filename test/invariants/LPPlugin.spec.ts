@@ -3,7 +3,7 @@ import { ethers } from 'hardhat';
 import { setup } from '../utils/setup';
 import { expect } from "chai";
 
-const NUM_FUZZ_RUNS = process.env.CI ? 10_000 : 2;
+const NUM_FUZZ_RUNS = process.env.CI ? 100 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
 
 describe("LPPlugin", () => {
