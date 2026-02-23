@@ -22,6 +22,8 @@ contract LPPluginFactory is
     address public immutable WNativeToken;
     address public immutable lpTokenFactory;
 
+    mapping (address => bool) public registry;
+
     /// @notice Emitted when a new LPPlugin instance is deployed
     /// @param pool The address of the associated Algebra Pool
     /// @param plugin The address of the newly deployed LPPlugin
@@ -58,6 +60,7 @@ contract LPPluginFactory is
         address pool,
         address newPluginAddress
     ) external onlyOwner {
+        require(registry[newPluginAddress], "plugin not registered");
         IAlgebraCustomPoolEntryPoint(entryPoint).setPlugin(
             pool,
             newPluginAddress
@@ -81,6 +84,7 @@ contract LPPluginFactory is
         uint256 maxAmount,
         address recipient
     ) external onlyOwner {
+        require(registry[plugin], "plugin not registered");
         uint256 amount;
         uint256 pluginBalance = IERC20(token).balanceOf(plugin);
         if (pluginBalance < maxAmount) {
@@ -95,11 +99,13 @@ contract LPPluginFactory is
         address plugin,
         uint24 newFeeRate
     ) external onlyOwner {
+        require(registry[plugin], "plugin not registered");
         LPPlugin(plugin).setPluginFeeRate(newFeeRate);
     }
 
     function _createPlugin(address pool) internal override returns (address) {
         LPPlugin plugin = new LPPlugin(pool, address(this));
+        registry[address(plugin)] = true;
         return address(plugin);
     }
 
@@ -116,7 +122,7 @@ contract LPPluginFactory is
 
         // Emit event to signal that a new plugin has been deployed
         emit PluginDeployed(pool, plugin, msg.sender);
-
+        registry[plugin] = true;
         return plugin;
     }
 }
