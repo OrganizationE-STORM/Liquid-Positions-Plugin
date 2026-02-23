@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.20;
+pragma solidity ^0.8.0;
 
-import "@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol";
+import '@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol';
 import "./interfaces/ILPPluginFactory.sol";
-import "@cryptoalgebra/integral-periphery/contracts/interfaces/external/IWNativeToken.sol";
-import "@cryptoalgebra/integral-periphery/contracts/libraries/TransferHelper.sol";
-import "@cryptoalgebra/integral-periphery/contracts/libraries/LiquidityAmounts.sol";
-import "@cryptoalgebra/integral-core/contracts/libraries/TickMath.sol";
+import '@cryptoalgebra/integral-periphery/contracts/interfaces/external/IWNativeToken.sol';
+import '@cryptoalgebra/integral-periphery/contracts/libraries/TransferHelper.sol';
+import '@cryptoalgebra/integral-periphery/contracts/libraries/LiquidityAmounts.sol';
+import '@cryptoalgebra/integral-core/contracts/libraries/TickMath.sol';
 import "./interfaces/ILPCallback.sol";
 
 contract LPCallback is ILPCallback {
+
     address public immutable pool;
     address internal immutable pluginFactory;
     address public immutable plugin;
@@ -33,17 +34,14 @@ contract LPCallback is ILPCallback {
         uint256 amount1Owed,
         bytes calldata data
     ) external override {
-        CallbackStructs.MintCallbackData memory decoded = abi.decode(
-            data,
-            (CallbackStructs.MintCallbackData)
-        );
+        CallbackStructs.MintCallbackData memory decoded = abi.decode(data, (CallbackStructs.MintCallbackData));
         require(msg.sender == pool, "Invalid caller of callback");
         IAlgebraPool algebraPool = IAlgebraPool(pool);
 
         if (amount0Owed > 0)
-            TransferHelper.safeTransferFrom(algebraPool.token0(), decoded.payer, msg.sender, amount0Owed);
+            _pay(algebraPool.token0(), decoded.payer, msg.sender, amount0Owed);
         if (amount1Owed > 0)
-            TransferHelper.safeTransferFrom(algebraPool.token1(), decoded.payer, msg.sender, amount1Owed);
+            _pay(algebraPool.token1(), decoded.payer, msg.sender, amount1Owed);
     }
 
     function mint(
@@ -52,15 +50,8 @@ contract LPCallback is ILPCallback {
         int24 tickUpper,
         uint256 amount0,
         uint256 amount1
-    )
-        external
-        override
-        returns (
-            uint256 amount0Returned,
-            uint256 amount1Returned,
-            uint128 returnedLiquidity
-        )
-    {
+    ) external override returns(uint256 amount0Returned, uint256 amount1Returned, uint128 returnedLiquidity) {
+
         (uint160 price, , , , , ) = IAlgebraPool(pool).globalState();
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmounts(
             price,
@@ -70,26 +61,37 @@ contract LPCallback is ILPCallback {
             amount1
         );
 
-        (amount0Returned, amount1Returned, returnedLiquidity) = IAlgebraPool(
-            pool
-        ).mint(
-                leftoversRecipient,
-                plugin,
-                tickLower,
-                tickUpper,
-                liquidity,
-                abi.encode(
-                    CallbackStructs.MintCallbackData({
-                        poolKey: poolKey,
-                        payer: msg.sender
-                    })
-                )
-            );
-
-        emit PositionMinted(
-            amount0Returned,
-            amount1Returned,
-            returnedLiquidity
+        (amount0Returned, amount1Returned, returnedLiquidity) = IAlgebraPool(pool).mint(
+            leftoversRecipient,
+            plugin,
+            tickLower,
+            tickUpper,
+            liquidity,
+            abi.encode(CallbackStructs.MintCallbackData({poolKey: poolKey, payer: msg.sender}))
         );
+
+        emit PositionMinted(amount0Returned, amount1Returned, returnedLiquidity);
+    }
+
+    function _pay(
+        address token,
+        address payer,
+        address recipient,
+        uint256 value
+    ) private {
+        address WNativeToken = ILPPluginFactory(pluginFactory).WNativeToken();
+        if (token == WNativeToken && address(this).balance >= value) {
+            // pay with WNativeToken
+            // "address(this).balance >= value" may unexpectedly become false (including due to frontrun)
+            // so this function should be accompanied by a `refundNativeToken` in multicall to avoid potential loss of tokens
+            IWNativeToken(WNativeToken).deposit{value: value}(); // wrap only what is needed to pay
+            IWNativeToken(WNativeToken).transfer(recipient, value);
+        } else if (payer == address(this)) {
+            // pay with tokens already in the contract (for the exact input multihop case)
+            TransferHelper.safeTransfer(token, recipient, value);
+        } else {
+            // pull payment
+            TransferHelper.safeTransferFrom(token, payer, recipient, value);
+        }
     }
 }

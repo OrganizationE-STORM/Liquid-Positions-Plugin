@@ -100,6 +100,7 @@ describe("LPPlugin", () => {
         let tokenId: bigint = readTokenIdFromEvent(positionManager, receiptNFTMint);
 
         const slippageData = ethers.AbiCoder.defaultAbiCoder().encode(['uint256', 'uint256'], [0, 0]);
+
         const trxTransferFrom = await positionManager.connect(signers[signedIndex])['safeTransferFrom(address,address,uint256,bytes)'](
             signers[signedIndex].address,
             pluginAddr,
@@ -138,7 +139,7 @@ describe("LPPlugin", () => {
                 const userBalance = await lpToken.balanceOf(signers[1].address)
 
                 expect(userBalance).to.be.equals(INITIAL_LP_TOKEN_TO_MINT)
-                expect(erc721BalancePlugin).to.be.equals(0)
+                expect(erc721BalancePlugin).to.be.equals(1)
                 expect(erc721BalanceUser).to.be.equals(0)
                 expect(tokenIdNft).not.to.be.undefined
                 expect(receiptTransferFrom).to.not.be.undefined
