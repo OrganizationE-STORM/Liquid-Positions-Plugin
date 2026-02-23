@@ -14,7 +14,6 @@ contract LPCallback is ILPCallback {
     address public immutable pool;
     address internal immutable pluginFactory;
     address public immutable plugin;
-    PoolAddress.PoolKey internal poolKey;
 
     event PositionMinted(uint256 amount0, uint256 amount1, uint128 liquidity);
 
@@ -22,11 +21,6 @@ contract LPCallback is ILPCallback {
         pool = _pool;
         pluginFactory = _pluginFactory;
         plugin = _plugin;
-        poolKey = PoolAddress.PoolKey({
-            deployer: address(0),
-            token0: address(0),
-            token1: address(0)
-        });
     }
 
     function algebraMintCallback(
@@ -67,7 +61,7 @@ contract LPCallback is ILPCallback {
             tickLower,
             tickUpper,
             liquidity,
-            abi.encode(CallbackStructs.MintCallbackData({poolKey: poolKey, payer: msg.sender}))
+            abi.encode(CallbackStructs.MintCallbackData({payer: msg.sender}))
         );
 
         emit PositionMinted(amount0Returned, amount1Returned, returnedLiquidity);

@@ -6,8 +6,6 @@ import "@cryptoalgebra/integral-periphery/contracts/libraries/PoolAddress.sol";
 library CallbackStructs {
 
     struct MintCallbackData {
-        PoolAddress.PoolKey poolKey;
         address payer;
     }
-
 }

@@ -78,9 +78,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     }
 
     /// @notice Parses calldata to extract the payer address
-    /// @dev data is abi.encode(MintCallbackData({PoolAddress.PoolKey poolKey, address payer}));
     function parseCalldata(bytes memory data) internal pure returns (address) {
-        (, address payer) = abi.decode(data, (PoolAddress.PoolKey, address));
+        address payer = abi.decode(data, (address));
         return payer;
     }
 
