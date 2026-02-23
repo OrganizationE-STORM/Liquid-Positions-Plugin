@@ -41,9 +41,6 @@ const config: HardhatUserConfig = {
 export default {
 	networks: {
 		hardhat: {
-			forking: {
-				url: ALCHEMY_URL || (INFURA_KEY ? `https://mainnet.infura.io/v3/${INFURA_KEY}` : ""),
-			},
 			chainId: 31337,
 			allowUnlimitedContractSize: true,
 			mining: {

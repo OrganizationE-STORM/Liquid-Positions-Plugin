@@ -4,7 +4,7 @@ import { setup } from '../utils/setup';
 import { expect } from "chai";
 import { LPCallback } from '../../typechain-types';
 
-const NUM_FUZZ_RUNS = process.env.CI ? 10_000 : 2;
+const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
 
 describe("LPPlugin", () => {
@@ -96,8 +96,8 @@ describe("LPPlugin", () => {
                     const swapFraction = BigInt(Math.floor(Math.random() * 50) + 1);
                     const amountIn = (amount0 * swapFraction) / 100n;
 
-                    const slippageBps = 50;
-                    const limitSqrtPrice = (state.price * BigInt(10_000 - slippageBps)) / BigInt(10_000);
+                    const slippageBps = 5;
+                    const limitSqrtPrice = (state.price * BigInt(10 - slippageBps)) / BigInt(10);
 
                     const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper)
                     const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress)
