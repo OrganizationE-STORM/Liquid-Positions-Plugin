@@ -77,9 +77,38 @@ describe("LPPlugin", () => {
         amount0Desired: bigint,
         amount1Desired: bigint,
         vars: PluginFixture,
-        signedIndex: number
+        signedIndex: number,
+        slippageParams?: { amount0Min: bigint, amount1Min: bigint }
     ): Promise<{ receiptTransferFrom: ContractTransactionReceipt, tokenIdNft: bigint }> => {
-        const { pluginAddr, plugin, positionManager, pluginFactoryAddr, token0, token1, signers } = vars;
+        const { pluginAddr, positionManager, signers } = vars;
+
+        const tokenId = await mintNFT(tickUpper, tickLower, amount0Desired, amount1Desired, vars, signedIndex)
+        const amount0Min = slippageParams?.amount0Min ?? 0n;
+        const amount1Min = slippageParams?.amount1Min ?? 0n;
+        const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
+            ['uint256', 'uint256'],
+            [amount0Min, amount1Min],
+        );
+        const trxTransferFrom = await positionManager.connect(signers[signedIndex])['safeTransferFrom(address,address,uint256,bytes)'](
+            signers[signedIndex].address,
+            pluginAddr,
+            tokenId!,
+            calldata
+        )
+        const receiptTransferFrom = await trxTransferFrom.wait()
+        if (!receiptTransferFrom) throw new Error(`No receipt found`)
+        return { receiptTransferFrom, tokenIdNft: tokenId }
+    }
+
+    const mintNFT = async (
+        tickUpper: number,
+        tickLower: number,
+        amount0Desired: bigint,
+        amount1Desired: bigint,
+        vars: PluginFixture,
+        signedIndex: number
+    ): Promise<bigint> => {
+        const { positionManager, pluginFactoryAddr, token0, token1, signers } = vars;
         const token0Address = await token0.getAddress()
         const token1Address = await token1.getAddress()
 
@@ -97,16 +126,7 @@ describe("LPPlugin", () => {
             deadline: Math.floor(Date.now() / 1000) + 60 * 99999999
         })
         const receiptNFTMint = await trxNFTMint.wait()
-        let tokenId: bigint = readTokenIdFromEvent(positionManager, receiptNFTMint);
-
-        const trxTransferFrom = await positionManager.connect(signers[signedIndex])['safeTransferFrom(address,address,uint256)'](
-            signers[signedIndex].address,
-            pluginAddr,
-            tokenId!
-        )
-        const receiptTransferFrom = await trxTransferFrom.wait()
-        if (!receiptTransferFrom) throw new Error(`No receipt found`)
-        return { receiptTransferFrom, tokenIdNft: tokenId }
+        return readTokenIdFromEvent(positionManager, receiptNFTMint);
     }
 
     describe('#onERC271Received', async () => {
@@ -196,6 +216,115 @@ describe("LPPlugin", () => {
                 currentTest++
                 console.log(`${currentTest}/${NUM_FUZZ_RUNS}  [${tickLower}/${tickUpper}]`)
             }
+        }).timeout(TIMEOUT_TESTS);
+
+        it('should revert when slippage protection is triggered (amount0Min too high)', async function () {
+            const vars = await setup(1);
+            const { pluginAddr, positionManager, signers } = vars;
+
+            // Use fixed ticks to ensure consistent liquidity
+            const tickLower = -60;
+            const tickUpper = 60;
+            const amount0Desired = ethers.parseEther('1');
+            const amount1Desired = ethers.parseEther('1');
+
+            // Mint NFT first
+            const tokenId = await mintNFT(
+                tickUpper,
+                tickLower,
+                amount0Desired,
+                amount1Desired,
+                vars,
+                1
+            );
+
+            // Set amount0Min higher than what the position holds - should revert
+            const excessiveAmount0Min = ethers.parseEther('100');
+            const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['uint256', 'uint256'],
+                [excessiveAmount0Min, 0n],
+            );
+
+            await expect(
+                positionManager.connect(signers[1])['safeTransferFrom(address,address,uint256,bytes)'](
+                    signers[1].address,
+                    pluginAddr,
+                    tokenId,
+                    calldata
+                )
+            ).to.be.revertedWith('Price slippage check');
+        }).timeout(TIMEOUT_TESTS);
+
+        it('should revert when slippage protection is triggered (amount1Min too high)', async function () {
+            const vars = await setup(1);
+            const { pluginAddr, positionManager, signers } = vars;
+
+            // Use fixed ticks to ensure consistent liquidity
+            const tickLower = -60;
+            const tickUpper = 60;
+            const amount0Desired = ethers.parseEther('1');
+            const amount1Desired = ethers.parseEther('1');
+
+            // Mint NFT first
+            const tokenId = await mintNFT(
+                tickUpper,
+                tickLower,
+                amount0Desired,
+                amount1Desired,
+                vars,
+                1
+            );
+
+            // Set amount1Min higher than what the position holds - should revert
+            const excessiveAmount1Min = ethers.parseEther('100');
+            const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['uint256', 'uint256'],
+                [0n, excessiveAmount1Min],
+            );
+
+            await expect(
+                positionManager.connect(signers[1])['safeTransferFrom(address,address,uint256,bytes)'](
+                    signers[1].address,
+                    pluginAddr,
+                    tokenId,
+                    calldata
+                )
+            ).to.be.revertedWith('Price slippage check');
+        }).timeout(TIMEOUT_TESTS);
+
+        it('should succeed with valid slippage protection parameters', async function () {
+            const vars = await setup(1);
+            const { plugin, signers } = vars;
+
+            // Use fixed ticks to ensure consistent liquidity
+            const tickLower = -60;
+            const tickUpper = 60;
+            const amount0Desired = ethers.parseEther('1');
+            const amount1Desired = ethers.parseEther('1');
+
+            // Use reasonable slippage values (small percentage of desired amounts)
+            const slippageParams = {
+                amount0Min: ethers.parseEther('0.001'), // Very small minimum
+                amount1Min: ethers.parseEther('0.001')  // Very small minimum
+            };
+
+            const { receiptTransferFrom, tokenIdNft } = await sendERC721ToPlugin(
+                tickUpper,
+                tickLower,
+                amount0Desired,
+                amount1Desired,
+                vars,
+                1,
+                slippageParams
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper);
+            const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
+            const userBalance = await lpToken.balanceOf(signers[1].address);
+
+            expect(userBalance).to.be.equals(INITIAL_LP_TOKEN_TO_MINT);
+            expect(tokenIdNft).not.to.be.undefined;
+            expect(receiptTransferFrom).to.not.be.undefined;
         }).timeout(TIMEOUT_TESTS);
     })
 })

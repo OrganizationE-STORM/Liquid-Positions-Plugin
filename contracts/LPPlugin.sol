@@ -229,7 +229,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         address,
         address from,
         uint256 tokenId,
-        bytes calldata
+        bytes calldata data
     ) external override returns (bytes4) {
         (
             ,
@@ -253,14 +253,15 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
+        (uint256 amount0Min, uint256 amount1Min) = abi.decode(data, (uint256, uint256));
         (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
             msg.sender
         ).decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: userLiquidity,
-                    amount0Min: 0,
-                    amount1Min: 0,
+                    amount0Min: amount0Min,
+                    amount1Min: amount1Min,
                     deadline: block.timestamp + 10 minutes
                 })
             );
