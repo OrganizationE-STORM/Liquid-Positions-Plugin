@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 import {ILPTokenFactory} from "./interfaces/ILPTokenFactory.sol";
 import {LPToken} from "./LPToken.sol";
-import "hardhat/console.sol";
 
 contract LPTokenFactory is ILPTokenFactory {
     constructor() {}

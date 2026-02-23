@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 // Core libraries and abstract plugin contract for Algebra protocol
 import "@cryptoalgebra/abstract-plugin/contracts/AbstractPlugin.sol";
@@ -29,13 +29,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
     struct CollectParams {
         address recipient;
-        uint128 liquidity;
         int24 tickLower;
         int24 tickUpper;
         uint256 lpTokensToBurn;
-        uint256 totalLPSupply;
-        uint128 fees0;
-        uint128 fees1;
+        uint256 totalSupplyBeforeBurn;
     }
 
     struct Cache {
@@ -48,8 +45,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint8(
             Plugins.AFTER_POSITION_MODIFY_FLAG |
                 Plugins.BEFORE_SWAP_FLAG |
-                Plugins.BEFORE_POSITION_MODIFY_FLAG |
-                Plugins.DYNAMIC_FEE
+                Plugins.BEFORE_POSITION_MODIFY_FLAG
         );
 
     // Plugin state variables
@@ -167,23 +163,11 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         require(lpTokensToBurn > 0, "Invalid LP tokens value");
 
         ILPToken lpToken = ILPToken(lpTokenByTicks[tickLower][tickUpper]);
-        (uint256 liquidity, , , uint128 fees0, uint128 fees1) = IAlgebraPool(
-            pool
-        ).positions(getPositionKey(address(this), tickLower, tickUpper));
-        uint256 totalSupply = lpToken.totalSupply();
+        uint256 totalSupplyBeforeBurn = lpToken.totalSupply();
         _burnLPTokens(msg.sender, lpToken, lpTokensToBurn);
 
         (amount0, amount1) = _collect(
-            CollectParams(
-                recipient,
-                SafeCast.toUint128(liquidity),
-                tickLower,
-                tickUpper,
-                lpTokensToBurn,
-                totalSupply,
-                fees0,
-                fees1
-            )
+            CollectParams(recipient, tickLower, tickUpper, lpTokensToBurn, totalSupplyBeforeBurn)
         );
     }
 
@@ -230,8 +214,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         address,
         address from,
         uint256 tokenId,
-        bytes calldata
+        bytes calldata data
     ) external override returns (bytes4) {
+        (uint256 min0, uint256 min1) = abi.decode(data, (uint256, uint256));
+
         (
             ,
             ,
@@ -254,14 +240,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
-            msg.sender
-        ).decreaseLiquidity(
+        (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(msg.sender)
+            .decreaseLiquidity(
                 INonfungiblePositionManager.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: userLiquidity,
-                    amount0Min: 0,
-                    amount1Min: 0,
+                    amount0Min: min0,
+                    amount1Min: min1,
                     deadline: block.timestamp + 10 minutes
                 })
             );
@@ -275,6 +260,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 amount1Max: uint128(amount1)
             })
         );
+        INonfungiblePositionManager(msg.sender).burn(tokenId);
 
         // Approve tokens for reinvestment
         require(
@@ -292,13 +278,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ? ILPToken(lpTokenAddress).balanceOf(address(this))
             : 0;
 
-        ILPCallback(callback).mint(
-            from,
-            tickLower,
-            tickUpper,
-            amount0,
-            amount1
-        );
+        ILPCallback(callback).mint(from, tickLower, tickUpper, amount0, amount1);
 
         require(
             ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
@@ -349,7 +329,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         int24 tickUpper,
         uint256 amount0,
         uint256 amount1
-    ) private {        
+    ) private {
         address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
         uint256 lpTokensToMint;
         ILPToken lpToken;
@@ -364,7 +344,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 "-",
                 Strings.toStringSigned(int256(tickUpper))
             );
-            address newTokenAddress = ILPTokenFactory(ILPPluginFactory(pluginFactory).lpTokenFactory()).create(string.concat("LPToken ", tokenName), tokenName);
+            address newTokenAddress = ILPTokenFactory(
+                ILPPluginFactory(pluginFactory).lpTokenFactory()
+            ).create(string.concat("LPToken ", tokenName), tokenName);
             lpToken = ILPToken(newTokenAddress);
 
             emit TokenCreated(tickLower, tickUpper, newTokenAddress);
@@ -416,17 +398,25 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     function _collect(
         CollectParams memory params
     ) private returns (uint256 amount0, uint256 amount1) {
+        (uint256 liquidity, , , , ) = IAlgebraPool(pool).positions(
+            getPositionKey(address(this), params.tickLower, params.tickUpper)
+        );
+
         (uint256 lAmount0, uint256 lAmount1) = IAlgebraPool(pool).burn(
             params.tickLower,
             params.tickUpper,
             SafeCast.toUint128(
                 Math.mulDiv(
                     params.lpTokensToBurn,
-                    params.liquidity,
-                    params.totalLPSupply
+                    SafeCast.toUint128(liquidity),
+                    params.totalSupplyBeforeBurn
                 )
             ),
             abi.encode(0)
+        );
+
+        (, , , uint128 fees0, uint128 fees1) = IAlgebraPool(pool).positions(
+            getPositionKey(address(this), params.tickLower, params.tickUpper)
         );
 
         (amount0, amount1) = IAlgebraPool(pool).collect(
@@ -437,16 +427,16 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        params.fees0,
-                        params.totalLPSupply
+                        (fees0 - lAmount0),
+                        params.totalSupplyBeforeBurn
                     )
                 ),
             SafeCast.toUint128(lAmount1) +
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        params.fees1,
-                        params.totalLPSupply
+                        (fees1 - lAmount1),
+                        params.totalSupplyBeforeBurn
                     )
                 )
         );
