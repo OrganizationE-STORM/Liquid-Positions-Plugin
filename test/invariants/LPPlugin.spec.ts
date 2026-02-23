@@ -10,6 +10,39 @@ describe("LPPlugin", () => {
     const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
     let currentTest = 0;
 
+    describe('#LPToken', async () => {
+        it('should create LP token with correct name and symbol', async function () {
+            const { callback, plugin, token0, token1, signers } = await setup(1);
+
+            await token0.connect(signers[1]).approve(callback, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(callback, ethers.MaxUint256);
+
+            const tickLower = -60;
+            const tickUpper = 60;
+            const amount0 = ethers.parseEther('1');
+            const amount1 = ethers.parseEther('1');
+
+            await callback.connect(signers[1]).mint(
+                signers[1].address,
+                tickLower,
+                tickUpper,
+                amount0,
+                amount1
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper);
+            const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
+
+            const token0Symbol = await token0.symbol();
+            const token1Symbol = await token1.symbol();
+            const expectedSymbol = `${token0Symbol}-${token1Symbol} ${tickLower}-${tickUpper}`;
+            const expectedName = `LPToken ${expectedSymbol}`;
+
+            expect(await lpToken.name()).to.equal(expectedName);
+            expect(await lpToken.symbol()).to.equal(expectedSymbol);
+        });
+    });
+
     describe('#AfterModifyPosition', async () => {
         it('should correctly handle random deposits for mint', async function () {
             this.timeout(TIMEOUT_TESTS);

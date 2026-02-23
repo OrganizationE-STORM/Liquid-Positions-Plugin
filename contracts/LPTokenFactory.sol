@@ -7,8 +7,8 @@ import {LPToken} from "./LPToken.sol";
 contract LPTokenFactory is ILPTokenFactory {
     constructor() {}
 
-    function create(string memory symbol, string memory name) external returns(address) {
-        LPToken token = new LPToken(symbol, name);
+    function create(string memory name, string memory symbol) external returns(address) {
+        LPToken token = new LPToken(name, symbol);
         token.transferOwnership(msg.sender);
         return address(token);
     }
