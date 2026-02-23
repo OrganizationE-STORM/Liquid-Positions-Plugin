@@ -253,7 +253,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0Min, uint256 amount1Min) = abi.decode(data, (uint256, uint256));
+        (uint256 amount0Min, uint256 amount1Min, uint256 deadline) = abi.decode(data, (uint256, uint256, uint256));
         (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
             msg.sender
         ).decreaseLiquidity(
@@ -262,7 +262,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                     liquidity: userLiquidity,
                     amount0Min: amount0Min,
                     amount1Min: amount1Min,
-                    deadline: block.timestamp + 10 minutes
+                    deadline: block.timestamp + deadline
                 })
             );
 

@@ -86,8 +86,8 @@ describe("LPPlugin", () => {
         const amount0Min = slippageParams?.amount0Min ?? 0n;
         const amount1Min = slippageParams?.amount1Min ?? 0n;
         const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-            ['uint256', 'uint256'],
-            [amount0Min, amount1Min],
+            ['uint256', 'uint256', 'uint256'],
+            [amount0Min, amount1Min, 10 * 60],
         );
         const trxTransferFrom = await positionManager.connect(signers[signedIndex])['safeTransferFrom(address,address,uint256,bytes)'](
             signers[signedIndex].address,
@@ -241,8 +241,8 @@ describe("LPPlugin", () => {
             // Set amount0Min higher than what the position holds - should revert
             const excessiveAmount0Min = ethers.parseEther('100');
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-                ['uint256', 'uint256'],
-                [excessiveAmount0Min, 0n],
+                ['uint256', 'uint256', 'uint256'],
+                [excessiveAmount0Min, 0n, 10 * 60],
             );
 
             await expect(
@@ -278,8 +278,8 @@ describe("LPPlugin", () => {
             // Set amount1Min higher than what the position holds - should revert
             const excessiveAmount1Min = ethers.parseEther('100');
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-                ['uint256', 'uint256'],
-                [0n, excessiveAmount1Min],
+                ['uint256', 'uint256', 'uint256'],
+                [0n, excessiveAmount1Min, 10 * 60],
             );
 
             await expect(
