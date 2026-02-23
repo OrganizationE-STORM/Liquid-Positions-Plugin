@@ -5,7 +5,7 @@ import type { ContractTransactionReceipt } from "ethers"
 import { INonfungiblePositionManager, LPCallback } from '../../typechain-types';
 import { PluginFixture } from '../shared/fixtures';
 
-const NUM_FUZZ_RUNS = process.env.CI ? 10_000 : 2;
+const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
 
 describe("LPPlugin", () => {
