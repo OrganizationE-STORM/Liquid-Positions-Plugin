@@ -10,6 +10,17 @@ describe("LPPlugin", () => {
     const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
     let currentTest = 0;
 
+    describe('#getCurrentFee', async () => {
+        it('should return the current base fee from the pool', async function () {
+            const { plugin, pool } = await setup(1);
+
+            const currentFee = await plugin.getCurrentFee();
+            const poolState = await pool.globalState();
+
+            expect(currentFee).to.equal(poolState.lastFee);
+        });
+    });
+
     describe('#LPToken', async () => {
         it('should create LP token with correct name and symbol', async function () {
             const { callback, plugin, token0, token1, signers } = await setup(1);

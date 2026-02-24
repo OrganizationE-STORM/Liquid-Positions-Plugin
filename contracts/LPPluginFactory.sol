@@ -74,8 +74,8 @@ contract LPPluginFactory is
         );
     }
 
-    function setFee(address pool, uint16 newFee) external onlyOwner {
-        IAlgebraCustomPoolEntryPoint(entryPoint).setFee(pool, newFee);
+    function setFee(address pool, uint16 newFee) external view onlyOwner {
+        revert();
     }
 
     function collectFee(

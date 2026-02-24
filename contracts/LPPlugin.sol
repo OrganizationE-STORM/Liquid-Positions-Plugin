@@ -478,4 +478,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 )
         );
     }
+
+    function getCurrentFee() external view returns (uint16) {
+        (, , uint16 baseFee, ) = _getPoolState();
+        return baseFee;
+    }
 }
