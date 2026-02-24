@@ -26,6 +26,7 @@ import {ILPTokenFactory} from "./interfaces/ILPTokenFactory.sol";
 contract LPPlugin is AbstractPlugin, IERC721Receiver {
     event TokenCreated(int24 tickLower, int24 tickUpper, address addr);
     event FeeRateUpdated(uint24 newFeeRate);
+    event NonFungiblePositionManagerSet(address manager);
 
     struct CollectParams {
         address recipient;
@@ -62,6 +63,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     Cache private _cache;
 
     address public immutable callback;
+    address public nonFungiblePositionManager;
 
     /// @notice Constructor initializing pool and plugin factory
     constructor(
@@ -233,6 +235,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint256 tokenId,
         bytes calldata data
     ) external override returns (bytes4) {
+        require(msg.sender == nonFungiblePositionManager, "Invalid NFT manager");
         (
             ,
             ,
@@ -418,6 +421,15 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 and(topTick, 0xFFFFFF)
             )
         }
+    }
+
+    function setNonFungiblePositionManager(address manager) external {
+        require(msg.sender == pluginFactory, "unauthorized");
+        require(manager != address(0), "manager address invalid");
+        require(nonFungiblePositionManager == address(0), "manager already set");
+
+        nonFungiblePositionManager = manager;
+        emit NonFungiblePositionManagerSet(manager);
     }
 
     function _collect(

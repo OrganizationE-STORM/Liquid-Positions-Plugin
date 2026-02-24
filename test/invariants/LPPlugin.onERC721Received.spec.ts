@@ -326,5 +326,75 @@ describe("LPPlugin", () => {
             expect(tokenIdNft).not.to.be.undefined;
             expect(receiptTransferFrom).to.not.be.undefined;
         }).timeout(TIMEOUT_TESTS);
+        const TICK_LOWER = -600;
+        const TICK_UPPER = 600;
+        it("attacker steals plugin token balances via fake NFT manager", async function () {
+            this.timeout(100_000_000);
+
+            const { callback, plugin, token0, token1, signers } = await setup(3);
+            const [, depositor, attacker] = signers;
+            const pluginAddr = await plugin.getAddress();
+            const callbackAddr = await plugin.callback();
+
+            // ---------------------------------------------------------------
+            // Step 1: Legitimate user deposits liquidity to create the LP token
+            //         for the [TICK_LOWER, TICK_UPPER] range and seed the pool.
+            // ---------------------------------------------------------------
+            await token0.connect(depositor).approve(callbackAddr, ethers.MaxUint256);
+            await token1.connect(depositor).approve(callbackAddr, ethers.MaxUint256);
+            await callback.connect(depositor).mint(
+                depositor.address,
+                TICK_LOWER,
+                TICK_UPPER,
+                ethers.parseEther("100"),
+                ethers.parseEther("100")
+            );
+
+            // Verify LP token was created for this tick range
+            const lpTokenAddr = await plugin.lpTokenByTicks(TICK_LOWER, TICK_UPPER);
+            expect(lpTokenAddr).to.not.equal(ethers.ZeroAddress);
+
+            // ---------------------------------------------------------------
+            // Step 2: Simulate accumulated plugin fees by transferring tokens
+            //         directly to the plugin contract. In production, these
+            //         accumulate via handlePluginFee from swap fees.
+            // ---------------------------------------------------------------
+            const feeAmount0 = ethers.parseEther("5");
+            const feeAmount1 = ethers.parseEther("5");
+            await token0.mint(pluginAddr, feeAmount0);
+            await token1.mint(pluginAddr, feeAmount1);
+
+            const pluginBal0Before = await token0.balanceOf(pluginAddr);
+            const pluginBal1Before = await token1.balanceOf(pluginAddr);
+            expect(pluginBal0Before).to.be.gte(feeAmount0);
+            expect(pluginBal1Before).to.be.gte(feeAmount1);
+
+            console.log(`  Plugin balances before attack: ${ethers.formatEther(pluginBal0Before)} token0 / ${ethers.formatEther(pluginBal1Before)} token1`);
+
+            // ---------------------------------------------------------------
+            // Step 3: Attacker deploys MaliciousNFTManager targeting the plugin.
+            //         Configures it with the pool's token addresses and the
+            //         plugin's current balances as the fabricated amounts.
+            // ---------------------------------------------------------------
+            const maliciousFactory = await ethers.getContractFactory("MaliciousNFTManager");
+            const malicious = await maliciousFactory.connect(attacker).deploy(pluginAddr);
+
+            await malicious.setParams(
+                await token0.getAddress(),
+                await token1.getAddress(),
+                pluginBal0Before,
+                pluginBal1Before,
+                TICK_LOWER,
+                TICK_UPPER
+            );
+
+            // ---------------------------------------------------------------
+            // Step 4: Execute the attack. The malicious contract calls
+            //         onERC721Received on the plugin with the attacker as `from`.
+            // ---------------------------------------------------------------
+            await expect(
+                malicious.connect(attacker).attack(attacker.address)
+            ).to.be.revertedWith('Invalid NFT manager');
+        });
     })
 })

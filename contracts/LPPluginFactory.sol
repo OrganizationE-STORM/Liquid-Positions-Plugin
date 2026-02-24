@@ -109,6 +109,10 @@ contract LPPluginFactory is
         return address(plugin);
     }
 
+    function setNonFungiblePositionManager(address manager, address plugin) onlyOwner external {
+        LPPlugin(plugin).setNonFungiblePositionManager(manager);
+    }
+
     /**
      * @notice Deploys a new LPPlugin instance for a specific pool
      * @dev Only callable by the owner of the factory

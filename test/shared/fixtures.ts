@@ -186,6 +186,11 @@ export const pluginFixture: Fixture<PluginFixture> = async function (numberOfUse
 		)
 	) as INonfungiblePositionManager;
 
+	await pluginFactory.setNonFungiblePositionManager(
+		await nonFungiblePositionManager.getAddress(),
+		await plugin.getAddress()
+	)
+
 	// Deploy SwapRouter
 	// This is needed to test swap interactions via the router
 	// We use the factory's poolDeployer to ensure compatibility with the pools created by the factory
