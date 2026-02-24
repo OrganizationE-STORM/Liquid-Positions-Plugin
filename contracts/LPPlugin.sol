@@ -323,11 +323,15 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
     function convertToken0ToToken1(
         uint256 amount0,
-        uint160 price
+        uint160 sqrtPriceX96
     ) public pure returns (uint256 token0InToken1) {
-        if (amount0 > 0 && price > 0) {
+        if (amount0 > 0 && sqrtPriceX96 > 0) {
             // Use Math.mulDiv to prevent overflow in multiplication and handle division by 2^96
-            token0InToken1 = Math.mulDiv(amount0, uint256(price), 2 ** 96);
+            token0InToken1 = Math.mulDiv(
+                Math.mulDiv(amount0, uint256(sqrtPriceX96), 2 ** 96),
+                uint256(sqrtPriceX96),
+                2 ** 96
+            );
         } else {
             token0InToken1 = 0;
         }
@@ -427,6 +431,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         require(msg.sender == pluginFactory, "unauthorized");
         require(manager != address(0), "manager address invalid");
         require(nonFungiblePositionManager == address(0), "manager already set");
+        require(
+            nonFungiblePositionManager == address(0),
+            "manager already set"
+        );
 
         nonFungiblePositionManager = manager;
         emit NonFungiblePositionManagerSet(manager);
