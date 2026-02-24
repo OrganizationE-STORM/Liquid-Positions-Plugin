@@ -102,10 +102,11 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         bytes calldata
     ) external virtual override onlyPool returns (bytes4, uint24) {
         if (owner == address(this) && deltaL > 0) {
-            (uint160 price, , , ) = _getPoolState();
+            (uint160 sqrtPrice, , , , , , ) = IAlgebraPool(pool)
+                .safelyGetStateOfAMM();
             _cache = Cache({
-                initialValue: positionValue(tickLower, tickUpper, price),
-                price: price
+                initialValue: positionValue(tickLower, tickUpper, sqrtPrice),
+                price: sqrtPrice
             });
         }
         return (IAlgebraPlugin.beforeModifyPosition.selector, 0);
@@ -149,9 +150,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 Math.mulDiv(IAlgebraPool(pool).fee(), pluginFeeRate, 10 ** 6)
             );
         } catch {
-            (, , uint16 baseFee, ) = _getPoolState();
+            (, , uint16 lastFee, , , , ) = IAlgebraPool(pool)
+                .safelyGetStateOfAMM();
             fee = SafeCast.toUint24(
-                Math.mulDiv(baseFee, pluginFeeRate, 10 ** 6)
+                Math.mulDiv(lastFee, pluginFeeRate, 10 ** 6)
             );
         }
         return (IAlgebraPlugin.beforeSwap.selector, 0, fee);
@@ -253,7 +255,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0Min, uint256 amount1Min, uint256 deadline) = abi.decode(data, (uint256, uint256, uint256));
+        (uint256 amount0Min, uint256 amount1Min, uint256 deadline) = abi.decode(
+            data,
+            (uint256, uint256, uint256)
+        );
         (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
             msg.sender
         ).decreaseLiquidity(
@@ -349,7 +354,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         int24 tickUpper,
         uint256 amount0,
         uint256 amount1
-    ) private {        
+    ) private {
         address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
         uint256 lpTokensToMint;
         ILPToken lpToken;
@@ -364,7 +369,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 "-",
                 Strings.toStringSigned(int256(tickUpper))
             );
-            address newTokenAddress = ILPTokenFactory(ILPPluginFactory(pluginFactory).lpTokenFactory()).create(string.concat("LPToken ", tokenName), tokenName);
+            address newTokenAddress = ILPTokenFactory(
+                ILPPluginFactory(pluginFactory).lpTokenFactory()
+            ).create(string.concat("LPToken ", tokenName), tokenName);
             lpToken = ILPToken(newTokenAddress);
 
             emit TokenCreated(tickLower, tickUpper, newTokenAddress);
