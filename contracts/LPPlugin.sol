@@ -279,8 +279,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
                 recipient: address(this),
-                amount0Max: uint128(amount0),
-                amount1Max: uint128(amount1)
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
             })
         );
 
