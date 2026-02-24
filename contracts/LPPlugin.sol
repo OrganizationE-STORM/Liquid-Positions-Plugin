@@ -165,7 +165,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         address recipient,
         int24 tickLower,
         int24 tickUpper,
-        uint128 lpTokensToBurn
+        uint128 lpTokensToBurn,
+        uint256 amount0Min,
+        uint256 amount1Min
     ) public returns (uint256 amount0, uint256 amount1) {
         require(lpTokensToBurn > 0, "Invalid LP tokens value");
 
@@ -188,6 +190,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 fees1
             )
         );
+
+        require(amount0 >= amount0Min, "Slippage: insufficient token0");
+        require(amount1 >= amount1Min, "Slippage: insufficient token1");
     }
 
     /// @notice Burns LP tokens for a user

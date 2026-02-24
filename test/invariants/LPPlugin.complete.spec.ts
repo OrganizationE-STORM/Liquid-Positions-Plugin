@@ -123,7 +123,9 @@ describe("LPPlugin", () => {
                         signers[i].address,
                         tickLower,
                         tickUpper,
-                        await lpToken.balanceOf(signers[i].address)
+                        await lpToken.balanceOf(signers[i].address),
+                        0,
+                        0
                     )
 
                     expect(await token0.balanceOf(await plugin.getAddress())).to.be.greaterThan(0)

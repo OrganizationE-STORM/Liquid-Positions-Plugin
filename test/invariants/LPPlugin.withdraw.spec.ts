@@ -95,7 +95,9 @@ describe("LPPlugin", () => {
                         signers[i].address,
                         tickLower,
                         tickUpper,
-                        tokensToBurn
+                        tokensToBurn,
+                        0,
+                        0
                     )
 
                     const balanceToken0AfterWithdraw = await token0.balanceOf(signers[i].address)
@@ -142,7 +144,9 @@ describe("LPPlugin", () => {
                             signers[i].address,
                             tickLower,
                             tickUpper,
-                            await lpToken.balanceOf(signers[i]) + BigInt(1)
+                            await lpToken.balanceOf(signers[i]) + BigInt(1),
+                            0,
+                            0
                         )
                     ).to.be.reverted
                 }
