@@ -104,6 +104,7 @@ contract LPPluginFactory is
     }
 
     function _createPlugin(address pool) internal override returns (address) {
+        require(msg.sender == entryPoint, "Unauthorized");
         LPPlugin plugin = new LPPlugin(pool, address(this));
         registry[address(plugin)] = true;
         return address(plugin);
