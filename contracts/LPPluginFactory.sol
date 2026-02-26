@@ -113,21 +113,4 @@ contract LPPluginFactory is
     function setNonFungiblePositionManager(address manager, address plugin) onlyOwner external {
         LPPlugin(plugin).setNonFungiblePositionManager(manager);
     }
-
-    /**
-     * @notice Deploys a new LPPlugin instance for a specific pool
-     * @dev Only callable by the owner of the factory
-     * @param pool Address of the Algebra Pool this plugin will manage
-     * @return plugin Address of the newly deployed LPPlugin instance
-     */
-    function deploy(address pool) external onlyOwner returns (address plugin) {
-        // Deploy a new LPPlugin, passing the pool and the factory address
-        LPPlugin instance = new LPPlugin(pool, address(this));
-        plugin = address(instance);
-
-        // Emit event to signal that a new plugin has been deployed
-        emit PluginDeployed(pool, plugin, msg.sender);
-        registry[plugin] = true;
-        return plugin;
-    }
 }

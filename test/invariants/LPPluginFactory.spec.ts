@@ -17,19 +17,6 @@ describe("LPPluginFactory", () => {
             ).to.not.be.reverted;
         });
 
-        it('should register plugin when deployed via deploy()', async function () {
-            const { pluginFactory, poolAddr } = await setup(1);
-
-            // Deploy a new plugin directly
-            const newPluginAddr = await pluginFactory.deploy.staticCall(poolAddr);
-            await pluginFactory.deploy(poolAddr);
-
-            // Should not revert because plugin is registered
-            await expect(
-                pluginFactory.setPluginFeeRate(newPluginAddr, 50000)
-            ).to.not.be.reverted;
-        });
-
         it('should revert setPlugin for non-registered plugin', async function () {
             const { pluginFactory, poolAddr, signers } = await setup(1);
 
@@ -96,14 +83,6 @@ describe("LPPluginFactory", () => {
 
             await expect(
                 pluginFactory.connect(signers[1]).collectFee(pluginAddr, token0Addr, 1000, signers[1].address)
-            ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
-        });
-
-        it('should revert deploy when called by non-owner', async function () {
-            const { pluginFactory, poolAddr, signers } = await setup(1);
-
-            await expect(
-                pluginFactory.connect(signers[1]).deploy(poolAddr)
             ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
         });
     });

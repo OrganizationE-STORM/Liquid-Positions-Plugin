@@ -7,7 +7,6 @@ import type {
   FunctionFragment,
   Result,
   Interface,
-  AddressLike,
   ContractRunner,
   ContractMethod,
   Listener,
@@ -22,14 +21,13 @@ import type {
 
 export interface ILPPluginFactoryInterface extends Interface {
   getFunction(
-    nameOrSignature: "WNativeToken" | "deploy" | "lpTokenFactory"
+    nameOrSignature: "WNativeToken" | "lpTokenFactory"
   ): FunctionFragment;
 
   encodeFunctionData(
     functionFragment: "WNativeToken",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "deploy", values: [AddressLike]): string;
   encodeFunctionData(
     functionFragment: "lpTokenFactory",
     values?: undefined
@@ -39,7 +37,6 @@ export interface ILPPluginFactoryInterface extends Interface {
     functionFragment: "WNativeToken",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "deploy", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "lpTokenFactory",
     data: BytesLike
@@ -91,8 +88,6 @@ export interface ILPPluginFactory extends BaseContract {
 
   WNativeToken: TypedContractMethod<[], [string], "nonpayable">;
 
-  deploy: TypedContractMethod<[pool: AddressLike], [string], "nonpayable">;
-
   lpTokenFactory: TypedContractMethod<[], [string], "nonpayable">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -102,9 +97,6 @@ export interface ILPPluginFactory extends BaseContract {
   getFunction(
     nameOrSignature: "WNativeToken"
   ): TypedContractMethod<[], [string], "nonpayable">;
-  getFunction(
-    nameOrSignature: "deploy"
-  ): TypedContractMethod<[pool: AddressLike], [string], "nonpayable">;
   getFunction(
     nameOrSignature: "lpTokenFactory"
   ): TypedContractMethod<[], [string], "nonpayable">;
