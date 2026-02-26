@@ -488,4 +488,53 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         (, , uint16 baseFee, ) = _getPoolState();
         return baseFee;
     }
+
+    function deposit(
+        address recipient,
+        int24 tickLower,
+        int24 tickUpper,
+        uint256 amount0,
+        uint256 amount1,
+        uint256 minLPTokens,
+        uint256 deadline
+    ) external {
+        require(block.timestamp <= deadline, "Transaction expired");
+
+        IERC20 token0 = IERC20(IAlgebraPool(pool).token0());
+        IERC20 token1 = IERC20(IAlgebraPool(pool).token1());
+
+        uint256 balance0Before = token0.balanceOf(address(this));
+        uint256 balance1Before = token1.balanceOf(address(this));
+
+        token0.transferFrom(msg.sender, address(this), amount0);
+        token1.transferFrom(msg.sender, address(this), amount1);
+
+        uint256 actual0 = token0.balanceOf(address(this)) - balance0Before;
+        uint256 actual1 = token1.balanceOf(address(this)) - balance1Before;
+
+        token0.approve(callback, actual0);
+        token1.approve(callback, actual1);
+
+        address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
+        uint256 lpBefore = lpTokenAddress != address(0)
+            ? ILPToken(lpTokenAddress).balanceOf(address(this))
+            : 0;
+
+        ILPCallback(callback).mint(
+            recipient,
+            tickLower,
+            tickUpper,
+            actual0,
+            actual1
+        );
+
+        uint256 lpReceived = ILPToken(lpTokenByTicks[tickLower][tickUpper])
+            .balanceOf(address(this)) - lpBefore;
+        require(lpReceived >= minLPTokens, "Insufficient LP tokens");
+
+        ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
+            recipient,
+            lpReceived
+        );
+    }
 }

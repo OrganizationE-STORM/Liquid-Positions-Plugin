@@ -56,20 +56,22 @@ describe("LPPlugin", () => {
             for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
                 const usersInTest = 3
                 const vars = await setup(usersInTest);
-                const { callback, plugin, signers, token0, token1, pool, utils } = vars
+                const { callback, pluginAddr, plugin, signers, token0, token1, pool, utils } = vars
                 const { tickLower, tickUpper, amount0Desired: amount0, amount1Desired: amount1 } = generateParamsForTest()
 
                 for (let i = 1; i <= usersInTest; ++i) {
-                    await token0.connect(signers[i]).approve(callback, ethers.MaxUint256);
-                    await token1.connect(signers[i]).approve(callback, ethers.MaxUint256);
-
-                    const tx = await callback.connect(signers[i]).mint(
+                    await token0.connect(signers[i]).approve(pluginAddr, ethers.MaxUint256);
+                    await token1.connect(signers[i]).approve(pluginAddr, ethers.MaxUint256);
+;
+                    const tx = await plugin.connect(signers[i]).deposit(
                         signers[i].address,
                         tickLower,
                         tickUpper,
                         amount0,
-                        amount1
-                    );
+                        amount1,
+                        0,
+                        Number.MAX_SAFE_INTEGER
+                    )
 
                     const state = await pool.globalState()
                     const { liquidity } = readNewAmountsFromMintEvent(await tx.wait(), callback)
@@ -121,20 +123,23 @@ describe("LPPlugin", () => {
             for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
                 const usersInTest = 3
                 const vars = await setup(usersInTest);
-                const { callback, plugin, signers, token0, token1 } = vars
+                const { plugin, signers, token0, pluginAddr, token1, pool } = vars
                 const { tickLower, tickUpper, amount0Desired: amount0, amount1Desired: amount1 } = generateParamsForTest()
 
                 for (let i = 1; i <= usersInTest; ++i) {
-                    await token0.connect(signers[i]).approve(callback, ethers.MaxUint256);
-                    await token1.connect(signers[i]).approve(callback, ethers.MaxUint256);
+                    await token0.connect(signers[i]).approve(pluginAddr, ethers.MaxUint256);
+                    await token1.connect(signers[i]).approve(pluginAddr, ethers.MaxUint256);
 
-                    await callback.connect(signers[i]).mint(
+                    const depositTx = await plugin.connect(signers[i]).deposit(
                         signers[i].address,
                         tickLower,
                         tickUpper,
                         amount0,
-                        amount1
-                    );
+                        amount1,
+                        0,
+                        Number.MAX_SAFE_INTEGER
+                    )
+                    await depositTx.wait()
 
                     const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper)
                     const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress)

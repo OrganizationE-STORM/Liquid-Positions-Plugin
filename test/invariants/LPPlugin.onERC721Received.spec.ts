@@ -331,24 +331,25 @@ describe("LPPlugin", () => {
         it("attacker steals plugin token balances via fake NFT manager", async function () {
             this.timeout(100_000_000);
 
-            const { callback, plugin, token0, token1, signers } = await setup(3);
+            const { pluginAddr, plugin, token0, token1, signers } = await setup(3);
             const [, depositor, attacker] = signers;
-            const pluginAddr = await plugin.getAddress();
-            const callbackAddr = await plugin.callback();
 
             // ---------------------------------------------------------------
             // Step 1: Legitimate user deposits liquidity to create the LP token
             //         for the [TICK_LOWER, TICK_UPPER] range and seed the pool.
             // ---------------------------------------------------------------
-            await token0.connect(depositor).approve(callbackAddr, ethers.MaxUint256);
-            await token1.connect(depositor).approve(callbackAddr, ethers.MaxUint256);
-            await callback.connect(depositor).mint(
-                depositor.address,
-                TICK_LOWER,
-                TICK_UPPER,
-                ethers.parseEther("100"),
-                ethers.parseEther("100")
-            );
+            await token0.connect(depositor).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(depositor).approve(pluginAddr, ethers.MaxUint256);
+            
+            await plugin.connect(signers[1]).deposit(
+            depositor.address,
+                    TICK_LOWER,
+                    TICK_UPPER,
+                    ethers.parseEther("100"),
+                    ethers.parseEther("100"),
+                    0,
+                    Number.MAX_SAFE_INTEGER
+                )
 
             // Verify LP token was created for this tick range
             const lpTokenAddr = await plugin.lpTokenByTicks(TICK_LOWER, TICK_UPPER);

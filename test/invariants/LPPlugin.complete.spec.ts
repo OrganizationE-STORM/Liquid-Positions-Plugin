@@ -75,20 +75,22 @@ describe("LPPlugin", () => {
                 const { tickLower, tickUpper, amount0Desired, amount1Desired } = generateParamsForTest(Number(state.tick))
 
                 for (let i = 1; i < users; ++i) {
-                    await token0.connect(signers[i]).approve(callback, ethers.MaxUint256);
-                    await token1.connect(signers[i]).approve(callback, ethers.MaxUint256);
+                    await token0.connect(signers[i]).approve(await plugin.getAddress(), ethers.MaxUint256);
+                    await token1.connect(signers[i]).approve(await plugin.getAddress(), ethers.MaxUint256);
 
                     const firstUserToken1BalanceBeforeMint = await token1.balanceOf(signers[i].address)
 
-                    const mintTx = await callback.connect(signers[i]).mint(
+                    const depositTx = await plugin.connect(signers[i]).deposit(
                         signers[i].address,
                         tickLower,
                         tickUpper,
                         amount0Desired,
-                        amount1Desired
-                    );
-                    const mintReceipt = await mintTx.wait();
-                    const { amount0 } = readNewAmountsFromMintEvent(mintReceipt, callback)
+                        amount1Desired,
+                        0,
+                        Number.MAX_SAFE_INTEGER
+                    )
+                    const depositReceipt = await depositTx.wait()
+                    const { amount0 } = readNewAmountsFromMintEvent(depositReceipt, callback)
 
                     await token0.connect(signers[i + 1]).approve(await swapRouter.getAddress(), ethers.MaxUint256);
 

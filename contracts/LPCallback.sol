@@ -45,6 +45,7 @@ contract LPCallback is ILPCallback {
         uint256 amount0,
         uint256 amount1
     ) external override returns(uint256 amount0Returned, uint256 amount1Returned, uint128 returnedLiquidity) {
+        require(msg.sender == plugin, "Only plugin");
         (uint160 price, , , , , ,) = IAlgebraPool(pool).safelyGetStateOfAMM();
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmounts(
             price,

@@ -129,16 +129,18 @@ describe('LPPlugin#beforeSwap', () => {
             const tickUpper = 60;
             const mintAmount = ethers.parseEther('10');
 
-            await token0.connect(signers[1]).approve(callback, ethers.MaxUint256);
-            await token1.connect(signers[1]).approve(callback, ethers.MaxUint256);
+            await token0.connect(signers[1]).approve(await plugin.getAddress(), ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(await plugin.getAddress(), ethers.MaxUint256);
 
-            await callback.connect(signers[1]).mint(
+            await plugin.connect(signers[1]).deposit(
                 signers[1].address,
                 tickLower,
                 tickUpper,
                 mintAmount,
-                mintAmount
-            );
+                mintAmount,
+                0,
+                Number.MAX_SAFE_INTEGER
+            )
 
             // Act
             const swapAmount = ethers.parseEther('1');
@@ -178,15 +180,19 @@ describe('LPPlugin#beforeSwap', () => {
             const mintAmount = ethers.parseEther('10');
             const swapAmount = ethers.parseEther('1');
 
-            await setupLow.token0.connect(setupLow.signers[1]).approve(setupLow.callback, ethers.MaxUint256);
-            await setupLow.token1.connect(setupLow.signers[1]).approve(setupLow.callback, ethers.MaxUint256);
-            await setupLow.callback.connect(setupLow.signers[1]).mint(
+            await setupLow.token0.connect(setupLow.signers[1]).approve(setupLow.pluginAddr, ethers.MaxUint256);
+            await setupLow.token1.connect(setupLow.signers[1]).approve(setupLow.pluginAddr, ethers.MaxUint256);
+            
+            let depositTx = await setupLow.plugin.connect(setupLow.signers[1]).deposit(
                 setupLow.signers[1].address,
                 tickLower,
                 tickUpper,
                 mintAmount,
-                mintAmount
-            );
+                mintAmount,
+                0,
+                Number.MAX_SAFE_INTEGER
+            )
+            await depositTx.wait()
 
             await setupLow.token0.connect(setupLow.signers[2]).approve(
                 await setupLow.swapRouter.getAddress(),
@@ -213,15 +219,18 @@ describe('LPPlugin#beforeSwap', () => {
             const setupHigh = await setup(2);
             await setupHigh.pluginFactory.setPluginFeeRate(setupHigh.pluginAddr, highFeeRate);
 
-            await setupHigh.token0.connect(setupHigh.signers[1]).approve(setupHigh.callback, ethers.MaxUint256);
-            await setupHigh.token1.connect(setupHigh.signers[1]).approve(setupHigh.callback, ethers.MaxUint256);
-            await setupHigh.callback.connect(setupHigh.signers[1]).mint(
+            await setupHigh.token0.connect(setupHigh.signers[1]).approve(setupHigh.pluginAddr, ethers.MaxUint256);
+            await setupHigh.token1.connect(setupHigh.signers[1]).approve(setupHigh.pluginAddr, ethers.MaxUint256);
+            
+            depositTx = await setupHigh.plugin.connect(setupHigh.signers[1]).deposit(
                 setupHigh.signers[1].address,
                 tickLower,
                 tickUpper,
                 mintAmount,
-                mintAmount
-            );
+                mintAmount,
+                0,
+                Number.MAX_SAFE_INTEGER
+            )
 
             await setupHigh.token0.connect(setupHigh.signers[2]).approve(
                 await setupHigh.swapRouter.getAddress(),
