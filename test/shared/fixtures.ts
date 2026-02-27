@@ -69,6 +69,8 @@ export const pluginFixture: Fixture<PluginFixture> = async function (numberOfUse
 	const pluginFactoryFactory = await ethers.getContractFactory('LPPluginFactory');
 	const pluginFactory = (await pluginFactoryFactory.deploy(customEntrypoint, ZeroAddress, await lpTokenFactory.getAddress())) as LPPluginFactory;
 
+	await lpTokenFactory.setPluginFactory(await pluginFactory.getAddress())
+
 	const token0Address = await token0.getAddress();
 	const token1Address = await token1.getAddress();
 	await factory.setDefaultPluginFactory(await pluginFactory.getAddress())
