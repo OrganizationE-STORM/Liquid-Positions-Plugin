@@ -16,6 +16,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/interfaces/IERC721Receiver.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./LPCallback.sol";
 import {ILPToken} from "./interfaces/ILPToken.sol";
@@ -24,6 +25,7 @@ import {ILPTokenFactory} from "./interfaces/ILPTokenFactory.sol";
 /// @title LPPlugin
 /// @notice Plugin to manage LPToken representations of NFT positions in Algebra
 contract LPPlugin is AbstractPlugin, IERC721Receiver {
+    using SafeERC20 for IERC20;
     event TokenCreated(int24 tickLower, int24 tickUpper, address addr);
     event FeeRateUpdated(uint24 newFeeRate);
     event NonFungiblePositionManagerSet(address manager);
@@ -307,13 +309,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ? ILPToken(lpTokenAddress).balanceOf(address(this))
             : 0;
 
-        ILPCallback(callback).mint(
-            from,
-            tickLower,
-            tickUpper,
-            amount0,
-            amount1
-        );
+        (uint256 amount0Used, uint256 amount1Used, ) = ILPCallback(callback)
+            .mint(from, tickLower, tickUpper, amount0, amount1);
 
         require(
             ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
@@ -324,6 +321,14 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ),
             "Transfer failed"
         );
+
+        // Refund unconsumed tokens using return values, not balance deltas
+        uint256 refund0 = amount0 - amount0Used;
+        uint256 refund1 = amount1 - amount1Used;
+        if (refund0 > 0)
+            IERC20(IAlgebraPool(pool).token0()).safeTransfer(from, refund0);
+        if (refund1 > 0)
+            IERC20(IAlgebraPool(pool).token1()).safeTransfer(from, refund1);
 
         return IERC721Receiver.onERC721Received.selector;
     }

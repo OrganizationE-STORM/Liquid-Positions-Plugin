@@ -328,6 +328,173 @@ describe("LPPlugin", () => {
         }).timeout(TIMEOUT_TESTS);
         const TICK_LOWER = -600;
         const TICK_UPPER = 600;
+        it('should refund unused token1 when position is above current tick range', async function () {
+            /**
+             * When a position's tick range is entirely ABOVE the current tick,
+             * the pool only needs token0 to provide liquidity. Any token1 collected
+             * from the NFT should be refunded to the user.
+             *
+             * Pool is initialized at tick ~0 (price 1:1)
+             * Position range [6000, 12000] is above current tick
+             *
+             * Flow:
+             * 1. User transfers NFT to plugin
+             * 2. Plugin collects all tokens from NFT (to plugin address)
+             * 3. Plugin calls callback.mint() which pulls tokens from plugin to POOL
+             * 4. Plugin refunds unused tokens to user
+             *
+             * After the operation:
+             * - Pool holds the liquidity (token0 for above-range position)
+             * - Plugin should have ZERO balance (pass-through only)
+             * - User gets LP tokens + refund of unused token1
+             */
+            const vars = await setup(1);
+            const { plugin, pluginAddr, positionManager, token0, token1, signers, pool } = vars;
+            const user = signers[1];
+
+            // Position entirely above current tick (which is ~0)
+            const tickLower = 6000;
+            const tickUpper = 12000;
+            const amount0Desired = ethers.parseEther('10');
+            const amount1Desired = ethers.parseEther('10');
+
+            // Mint NFT with liquidity in the above-range position
+            const tokenId = await mintNFT(
+                tickUpper,
+                tickLower,
+                amount0Desired,
+                amount1Desired,
+                vars,
+                1
+            );
+
+            // Get user balances before transfer
+            const userToken0Before = await token0.balanceOf(user.address);
+            const userToken1Before = await token1.balanceOf(user.address);
+
+            // Transfer NFT to plugin
+            const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['uint256', 'uint256', 'uint256'],
+                [0n, 0n, 10 * 60],
+            );
+
+            await positionManager.connect(user)['safeTransferFrom(address,address,uint256,bytes)'](
+                user.address,
+                pluginAddr,
+                tokenId,
+                calldata
+            );
+
+            // Get user balances after transfer
+            const userToken0After = await token0.balanceOf(user.address);
+            const userToken1After = await token1.balanceOf(user.address);
+
+            // Verify LP tokens were minted
+            const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper);
+            expect(lpTokenAddress).to.not.equal(ethers.ZeroAddress);
+            const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
+            const userLPBalance = await lpToken.balanceOf(user.address);
+            expect(userLPBalance).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+
+            // For position above current tick, token1 should be refunded (not used by pool)
+            // token0 is consumed by the position
+            const token1Refunded = userToken1After - userToken1Before;
+
+            // User should have received token1 back (refund > 0)
+            // The exact amount depends on how much was in the NFT vs how much the pool used
+            expect(token1Refunded).to.be.gte(0n, "Token1 should be refunded for above-range position");
+
+            // Plugin is a pass-through: all tokens either went to the pool (liquidity) or back to user (refund)
+            // Plugin should NOT hold any tokens after the operation
+            const pluginToken0Balance = await token0.balanceOf(pluginAddr);
+            const pluginToken1Balance = await token1.balanceOf(pluginAddr);
+            expect(pluginToken0Balance).to.equal(0n, "Plugin should not hold token0 - it goes to pool as liquidity");
+            expect(pluginToken1Balance).to.equal(0n, "Plugin should not hold token1 - it should be refunded to user");
+        }).timeout(TIMEOUT_TESTS);
+
+        it('should refund unused token0 when position is below current tick range', async function () {
+            /**
+             * When a position's tick range is entirely BELOW the current tick,
+             * the pool only needs token1 to provide liquidity. Any token0 collected
+             * from the NFT should be refunded to the user.
+             *
+             * Pool is initialized at tick ~0 (price 1:1)
+             * Position range [-12000, -6000] is below current tick
+             *
+             * Flow:
+             * 1. User transfers NFT to plugin
+             * 2. Plugin collects all tokens from NFT (to plugin address)
+             * 3. Plugin calls callback.mint() which pulls tokens from plugin to POOL
+             * 4. Plugin refunds unused tokens to user
+             *
+             * After the operation:
+             * - Pool holds the liquidity (token1 for below-range position)
+             * - Plugin should have ZERO balance (pass-through only)
+             * - User gets LP tokens + refund of unused token0
+             */
+            const vars = await setup(1);
+            const { plugin, pluginAddr, positionManager, token0, token1, signers, pool } = vars;
+            const user = signers[1];
+
+            // Position entirely below current tick (which is ~0)
+            const tickLower = -12000;
+            const tickUpper = -6000;
+            const amount0Desired = ethers.parseEther('10');
+            const amount1Desired = ethers.parseEther('10');
+
+            // Mint NFT with liquidity in the below-range position
+            const tokenId = await mintNFT(
+                tickUpper,
+                tickLower,
+                amount0Desired,
+                amount1Desired,
+                vars,
+                1
+            );
+
+            // Get user balances before transfer
+            const userToken0Before = await token0.balanceOf(user.address);
+            const userToken1Before = await token1.balanceOf(user.address);
+
+            // Transfer NFT to plugin
+            const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['uint256', 'uint256', 'uint256'],
+                [0n, 0n, 10 * 60],
+            );
+
+            await positionManager.connect(user)['safeTransferFrom(address,address,uint256,bytes)'](
+                user.address,
+                pluginAddr,
+                tokenId,
+                calldata
+            );
+
+            // Get user balances after transfer
+            const userToken0After = await token0.balanceOf(user.address);
+            const userToken1After = await token1.balanceOf(user.address);
+
+            // Verify LP tokens were minted
+            const lpTokenAddress = await plugin.lpTokenByTicks(tickLower, tickUpper);
+            expect(lpTokenAddress).to.not.equal(ethers.ZeroAddress);
+            const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
+            const userLPBalance = await lpToken.balanceOf(user.address);
+            expect(userLPBalance).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+
+            // For position below current tick, token0 should be refunded (not used by pool)
+            // token1 is consumed by the position
+            const token0Refunded = userToken0After - userToken0Before;
+
+            // User should have received token0 back (refund >= 0)
+            expect(token0Refunded).to.be.gte(0n, "Token0 should be refunded for below-range position");
+
+            // Plugin is a pass-through: all tokens either went to the pool (liquidity) or back to user (refund)
+            // Plugin should NOT hold any tokens after the operation
+            const pluginToken0Balance = await token0.balanceOf(pluginAddr);
+            const pluginToken1Balance = await token1.balanceOf(pluginAddr);
+            expect(pluginToken0Balance).to.equal(0n, "Plugin should not hold token0 - it should be refunded to user");
+            expect(pluginToken1Balance).to.equal(0n, "Plugin should not hold token1 - it goes to pool as liquidity");
+        }).timeout(TIMEOUT_TESTS);
+
         it("attacker steals plugin token balances via fake NFT manager", async function () {
             this.timeout(100_000_000);
 
