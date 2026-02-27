@@ -392,25 +392,21 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         } else {
             lpToken = ILPToken(lpTokenAddress);
             uint256 totalSupply = lpToken.totalSupply();
-
-            // Calculate delta value: deltaY + deltaX * P (safe fixed-point arithmetic)
-            // deltaY = amount0 (token1 being deposited)
-            // deltaX = depositAmount0 (token0 being deposited)
             uint256 userValue = amount1 +
                 convertToken0ToToken1(amount0, _cache.price);
 
-            // Apply the formula: lpTokensToMint = (deltaValue * totalSupply) / preValue
-            if (_cache.initialValue > 0 && totalSupply > 0) {
+            if (totalSupply == 0) {
+                lpTokensToMint = INITIAL_LP_TOKEN_TO_MINT;
+            } else if (_cache.initialValue > 0) {
                 lpTokensToMint = Math.mulDiv(
                     userValue,
                     totalSupply,
                     _cache.initialValue
                 );
             } else {
-                // Fallback for edge cases (first deposit, zero pre-value, etc.)
-                lpTokensToMint = INITIAL_LP_TOKEN_TO_MINT;
+                revert("Position value is zero");
             }
-            // Ensure minimum lpToken amount to prevent zero minting
+
             if (lpTokensToMint == 0 && userValue > 0) {
                 lpTokensToMint = 1;
             }
