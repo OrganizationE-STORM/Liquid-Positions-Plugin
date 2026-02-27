@@ -289,6 +289,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             })
         );
 
+        INonfungiblePositionManager(msg.sender).burn(tokenId);
+
         // Approve tokens for reinvestment
         require(
             IERC20(IAlgebraPool(pool).token0()).approve(callback, amount0),
