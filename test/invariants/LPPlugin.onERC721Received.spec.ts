@@ -78,16 +78,19 @@ describe("LPPlugin", () => {
         amount1Desired: bigint,
         vars: PluginFixture,
         signedIndex: number,
-        slippageParams?: { amount0Min: bigint, amount1Min: bigint }
+        slippageParams?: { amount0Min: bigint, amount1Min: bigint, deadline?: bigint, minLPTokens?: bigint }
     ): Promise<{ receiptTransferFrom: ContractTransactionReceipt, tokenIdNft: bigint }> => {
         const { pluginAddr, positionManager, signers } = vars;
 
         const tokenId = await mintNFT(tickUpper, tickLower, amount0Desired, amount1Desired, vars, signedIndex)
         const amount0Min = slippageParams?.amount0Min ?? 0n;
         const amount1Min = slippageParams?.amount1Min ?? 0n;
+        // Default deadline: current time + 10 minutes (in seconds)
+        const deadline = slippageParams?.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 10 * 60);
+        const minLPTokens = slippageParams?.minLPTokens ?? 0n;
         const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-            ['uint256', 'uint256', 'uint256'],
-            [amount0Min, amount1Min, 10 * 60],
+            ['uint256', 'uint256', 'uint256', 'uint256'],
+            [amount0Min, amount1Min, deadline, minLPTokens],
         );
         const trxTransferFrom = await positionManager.connect(signers[signedIndex])['safeTransferFrom(address,address,uint256,bytes)'](
             signers[signedIndex].address,
@@ -240,9 +243,10 @@ describe("LPPlugin", () => {
 
             // Set amount0Min higher than what the position holds - should revert
             const excessiveAmount0Min = ethers.parseEther('100');
+            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-                ['uint256', 'uint256', 'uint256'],
-                [excessiveAmount0Min, 0n, 10 * 60],
+                ['uint256', 'uint256', 'uint256', 'uint256'],
+                [excessiveAmount0Min, 0n, futureDeadline, 0n],
             );
 
             await expect(
@@ -277,9 +281,10 @@ describe("LPPlugin", () => {
 
             // Set amount1Min higher than what the position holds - should revert
             const excessiveAmount1Min = ethers.parseEther('100');
+            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-                ['uint256', 'uint256', 'uint256'],
-                [0n, excessiveAmount1Min, 10 * 60],
+                ['uint256', 'uint256', 'uint256', 'uint256'],
+                [0n, excessiveAmount1Min, futureDeadline, 0n],
             );
 
             await expect(
@@ -326,6 +331,82 @@ describe("LPPlugin", () => {
             expect(tokenIdNft).not.to.be.undefined;
             expect(receiptTransferFrom).to.not.be.undefined;
         }).timeout(TIMEOUT_TESTS);
+
+        it('should revert when deadline has expired', async function () {
+            const vars = await setup(1);
+            const { pluginAddr, positionManager, signers } = vars;
+
+            // Use fixed ticks to ensure consistent liquidity
+            const tickLower = -60;
+            const tickUpper = 60;
+            const amount0Desired = ethers.parseEther('1');
+            const amount1Desired = ethers.parseEther('1');
+
+            // Mint NFT first
+            const tokenId = await mintNFT(
+                tickUpper,
+                tickLower,
+                amount0Desired,
+                amount1Desired,
+                vars,
+                1
+            );
+
+            // Set deadline to 0 (already expired since block.timestamp > 0)
+            const expiredDeadline = 0n;
+            const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['uint256', 'uint256', 'uint256', 'uint256'],
+                [0n, 0n, expiredDeadline, 0n],
+            );
+
+            await expect(
+                positionManager.connect(signers[1])['safeTransferFrom(address,address,uint256,bytes)'](
+                    signers[1].address,
+                    pluginAddr,
+                    tokenId,
+                    calldata
+                )
+            ).to.be.revertedWith('Transaction expired');
+        }).timeout(TIMEOUT_TESTS);
+
+        it('should revert when minLPTokens requirement is not met', async function () {
+            const vars = await setup(1);
+            const { pluginAddr, positionManager, signers } = vars;
+
+            // Use fixed ticks to ensure consistent liquidity
+            const tickLower = -60;
+            const tickUpper = 60;
+            const amount0Desired = ethers.parseEther('1');
+            const amount1Desired = ethers.parseEther('1');
+
+            // Mint NFT first
+            const tokenId = await mintNFT(
+                tickUpper,
+                tickLower,
+                amount0Desired,
+                amount1Desired,
+                vars,
+                1
+            );
+
+            // Set minLPTokens to an impossibly high value
+            const excessiveMinLPTokens = ethers.parseEther('999999999999999999999999999999999');
+            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
+            const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['uint256', 'uint256', 'uint256', 'uint256'],
+                [0n, 0n, futureDeadline, excessiveMinLPTokens],
+            );
+
+            await expect(
+                positionManager.connect(signers[1])['safeTransferFrom(address,address,uint256,bytes)'](
+                    signers[1].address,
+                    pluginAddr,
+                    tokenId,
+                    calldata
+                )
+            ).to.be.revertedWith('Insufficient LP tokens');
+        }).timeout(TIMEOUT_TESTS);
+
         const TICK_LOWER = -600;
         const TICK_UPPER = 600;
         it('should refund unused token1 when position is above current tick range', async function () {
@@ -373,9 +454,10 @@ describe("LPPlugin", () => {
             const userToken1Before = await token1.balanceOf(user.address);
 
             // Transfer NFT to plugin
+            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-                ['uint256', 'uint256', 'uint256'],
-                [0n, 0n, 10 * 60],
+                ['uint256', 'uint256', 'uint256', 'uint256'],
+                [0n, 0n, futureDeadline, 0n],
             );
 
             await positionManager.connect(user)['safeTransferFrom(address,address,uint256,bytes)'](
@@ -457,9 +539,10 @@ describe("LPPlugin", () => {
             const userToken1Before = await token1.balanceOf(user.address);
 
             // Transfer NFT to plugin
+            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
-                ['uint256', 'uint256', 'uint256'],
-                [0n, 0n, 10 * 60],
+                ['uint256', 'uint256', 'uint256', 'uint256'],
+                [0n, 0n, futureDeadline, 0n],
             );
 
             await positionManager.connect(user)['safeTransferFrom(address,address,uint256,bytes)'](

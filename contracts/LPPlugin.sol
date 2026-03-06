@@ -242,7 +242,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint256 tokenId,
         bytes calldata data
     ) external override returns (bytes4) {
-        require(msg.sender == nonFungiblePositionManager, "Invalid NFT manager");
+        require(
+            msg.sender == nonFungiblePositionManager,
+            "Invalid NFT manager"
+        );
         (
             ,
             ,
@@ -265,10 +268,13 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         );
 
         // Decrease liquidity from user's latest NFT
-        (uint256 amount0Min, uint256 amount1Min, uint256 deadline) = abi.decode(
-            data,
-            (uint256, uint256, uint256)
-        );
+        (
+            uint256 amount0Min,
+            uint256 amount1Min,
+            uint256 deadline,
+            uint256 minLPTokens
+        ) = abi.decode(data, (uint256, uint256, uint256, uint256));
+        require(block.timestamp <= deadline, "Transaction expired");
         (uint256 amount0, uint256 amount1) = INonfungiblePositionManager(
             msg.sender
         ).decreaseLiquidity(
@@ -305,7 +311,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
         address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
 
-        uint256 currentAmount = lpTokenAddress != address(0)
+        uint256 lpBefore = lpTokenAddress != address(0)
             ? ILPToken(lpTokenAddress).balanceOf(address(this))
             : 0;
 
@@ -317,7 +323,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 from,
                 ILPToken(lpTokenByTicks[tickLower][tickUpper]).balanceOf(
                     address(this)
-                ) - currentAmount
+                ) - lpBefore
             ),
             "Transfer failed"
         );
@@ -329,6 +335,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             IERC20(IAlgebraPool(pool).token0()).safeTransfer(from, refund0);
         if (refund1 > 0)
             IERC20(IAlgebraPool(pool).token1()).safeTransfer(from, refund1);
+        uint256 lpReceived = ILPToken(lpTokenByTicks[tickLower][tickUpper])
+            .balanceOf(address(this)) - lpBefore;
+        require(lpReceived >= minLPTokens, "Insufficient LP tokens");
 
         return IERC721Receiver.onERC721Received.selector;
     }
@@ -438,7 +447,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     function setNonFungiblePositionManager(address manager) external {
         require(msg.sender == pluginFactory, "unauthorized");
         require(manager != address(0), "manager address invalid");
-        require(nonFungiblePositionManager == address(0), "manager already set");
+        require(
+            nonFungiblePositionManager == address(0),
+            "manager already set"
+        );
         require(
             nonFungiblePositionManager == address(0),
             "manager already set"
