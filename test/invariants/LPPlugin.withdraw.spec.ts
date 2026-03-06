@@ -117,6 +117,73 @@ describe("LPPlugin", () => {
                 console.log(`${currentTest}/${NUM_FUZZ_RUNS}  [${tickLower}/${tickUpper}]`)
             }
         }).timeout(TIMEOUT_TESTS);
+        it('should revert when lpTokensToBurn is zero', async function () {
+            // Prepare: deposit to initialise the LP token, then try to withdraw 0
+            const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
+            await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await plugin.connect(signers[1]).deposit(
+                signers[1].address, -60, 60,
+                ethers.parseEther('1'), ethers.parseEther('1'),
+                0, Number.MAX_SAFE_INTEGER
+            );
+
+            // Act + Check
+            await expect(
+                plugin.connect(signers[1]).withdraw(signers[1].address, -60, 60, 0, 0, 0)
+            ).to.be.revertedWith('Invalid LP tokens value');
+        });
+
+        it('should revert when amount0 received is less than amount0Min', async function () {
+            // Prepare: deposit into in-range position
+            const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
+            await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await plugin.connect(signers[1]).deposit(
+                signers[1].address, -60, 60,
+                ethers.parseEther('1'), ethers.parseEther('1'),
+                0, Number.MAX_SAFE_INTEGER
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(-60, 60);
+            const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
+            const lpBalance = await lpToken.balanceOf(signers[1].address);
+            await lpToken.connect(signers[1]).approve(await plugin.getAddress(), lpBalance);
+
+            // Act + Check: amount0Min set impossibly high
+            await expect(
+                plugin.connect(signers[1]).withdraw(
+                    signers[1].address, -60, 60, lpBalance,
+                    ethers.parseEther('1000'), 0
+                )
+            ).to.be.revertedWith('Slippage: insufficient token0');
+        });
+
+        it('should revert when amount1 received is less than amount1Min', async function () {
+            // Prepare: deposit into in-range position
+            const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
+            await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await plugin.connect(signers[1]).deposit(
+                signers[1].address, -60, 60,
+                ethers.parseEther('1'), ethers.parseEther('1'),
+                0, Number.MAX_SAFE_INTEGER
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(-60, 60);
+            const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
+            const lpBalance = await lpToken.balanceOf(signers[1].address);
+            await lpToken.connect(signers[1]).approve(await plugin.getAddress(), lpBalance);
+
+            // Act + Check: amount1Min set impossibly high
+            await expect(
+                plugin.connect(signers[1]).withdraw(
+                    signers[1].address, -60, 60, lpBalance,
+                    0, ethers.parseEther('1000')
+                )
+            ).to.be.revertedWith('Slippage: insufficient token1');
+        });
+
         it('throws when user wants to withdraw more than his balance', async () => {
             let currentTest = 0;
 

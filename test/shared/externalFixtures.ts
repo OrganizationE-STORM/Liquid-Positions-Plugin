@@ -51,14 +51,16 @@ export const entrypointFixture: Fixture<EntrypointFixture> = async function (): 
 
   const poolDeployerFactory = await ethers.getContractFactory(AlgebraPoolDeployer.abi, AlgebraPoolDeployer.bytecode);
   await poolDeployerFactory.deploy(_factory);
+  const poolAdminrole = await _factory.POOLS_ADMINISTRATOR_ROLE()
 
   const customEntrypointFactory = await ethers.getContractFactory(AlgebraCustomPoolEntryPointJson.abi, AlgebraCustomPoolEntryPointJson.bytecode);
   const _customEntrypoint = (await customEntrypointFactory.deploy(_factory)) as any as IAlgebraCustomPoolEntryPoint;
 
   const role = await (_factory as any).CUSTOM_POOL_DEPLOYER()
-  await (_factory as any).grantRole(role, await _customEntrypoint.getAddress())
   
-
+  await (_factory as any).grantRole(role, await _customEntrypoint.getAddress())
+  await (_factory as any).grantRole(poolAdminrole, await _customEntrypoint.getAddress())
+  
   return {
     signers,
     factory: _factory,

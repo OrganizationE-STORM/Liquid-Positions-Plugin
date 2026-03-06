@@ -1,9 +1,10 @@
 import { EventLog, ZeroAddress } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 import { setup } from '../utils/setup';
 import { expect } from "chai";
 import { ContractTransactionReceipt } from 'ethers';
 import { LPCallback } from '../../typechain-types';
+import { impersonate } from '../shared/helpers';
 
 const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
@@ -76,6 +77,202 @@ describe("LPPlugin", () => {
 
             expect(await lpToken.name()).to.equal(expectedName);
             expect(await lpToken.symbol()).to.equal(expectedSymbol);
+        });
+    });
+
+    describe('#beforeInitialize', async () => {
+        it('should revert when caller is not the pool', async function () {
+            // Prepare
+            const { plugin, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                plugin.connect(signers[1]).beforeInitialize(signers[1].address, 0n)
+            ).to.be.revertedWith('Only pool can call this');
+        });
+    });
+
+    describe('#beforeModifyPosition', async () => {
+        it('should revert when caller is not the pool', async function () {
+            // Prepare
+            const { plugin, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                plugin.connect(signers[1]).beforeModifyPosition(signers[1].address, signers[1].address, -60, 60, 100n, '0x')
+            ).to.be.revertedWith('Only pool can call this');
+        });
+    });
+
+    describe('#afterModifyPosition', async () => {
+        it('should revert when caller is not the pool', async function () {
+            // Prepare
+            const { plugin, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                plugin.connect(signers[1]).afterModifyPosition(signers[1].address, signers[1].address, -60, 60, 100n, 0n, 0n, '0x')
+            ).to.be.revertedWith('Only pool can call this');
+        });
+    });
+
+    describe('#beforeSwap', async () => {
+        it('should revert when caller is not the pool', async function () {
+            // Prepare
+            const { plugin, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                plugin.connect(signers[1]).beforeSwap(signers[1].address, signers[1].address, true, 100n, 0n, false, '0x')
+            ).to.be.revertedWith('Only pool can call this');
+        });
+    });
+
+    describe('#setPluginFeeRate', async () => {
+        it('should revert when caller is not the plugin factory', async function () {
+            // Prepare
+            const { plugin, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                plugin.connect(signers[1]).setPluginFeeRate(1000)
+            ).to.be.revertedWith('Unauthorized');
+        });
+    });
+
+    describe('#setNonFungiblePositionManager', async () => {
+        it('should revert when caller is not the plugin factory', async function () {
+            // Prepare
+            const { plugin, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                plugin.connect(signers[1]).setNonFungiblePositionManager(signers[2].address)
+            ).to.be.revertedWith('unauthorized');
+        });
+
+        it('should revert when manager address is zero', async function () {
+            // Prepare: impersonate the plugin factory (zero address check fires before already-set check)
+            const { plugin, pluginFactory } = await setup(1);
+            const pluginFactoryAddr = await pluginFactory.getAddress();
+            await network.provider.send('hardhat_setBalance', [pluginFactoryAddr, '0x56BC75E2D630FFFFF']);
+            const factorySigner = await impersonate(pluginFactoryAddr);
+
+            // Act + Check
+            await expect(
+                plugin.connect(factorySigner).setNonFungiblePositionManager(ZeroAddress)
+            ).to.be.revertedWith('manager address invalid');
+        });
+
+        it('should revert when manager is already set', async function () {
+            // Prepare: impersonate the plugin factory; fixture already set the manager
+            const { plugin, pluginFactory, signers } = await setup(1);
+            const pluginFactoryAddr = await pluginFactory.getAddress();
+            await network.provider.send('hardhat_setBalance', [pluginFactoryAddr, '0x56BC75E2D630FFFFF']);
+            const factorySigner = await impersonate(pluginFactoryAddr);
+
+            // Act + Check
+            await expect(
+                plugin.connect(factorySigner).setNonFungiblePositionManager(signers[2].address)
+            ).to.be.revertedWith('manager already set');
+        });
+    });
+
+    describe('#deposit', async () => {
+        it('should revert when deadline has passed', async function () {
+            // Prepare
+            const { plugin, signers } = await setup(1);
+
+            // Act + Check: deadline = 0 is in the past
+            await expect(
+                plugin.connect(signers[1]).deposit(
+                    signers[1].address, -60, 60,
+                    ethers.parseEther('1'), ethers.parseEther('1'),
+                    0, 0
+                )
+            ).to.be.revertedWith('Transaction expired');
+        });
+
+        it('should revert when LP tokens received are less than minLPTokens', async function () {
+            // Prepare
+            const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
+            await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+
+            // Act + Check: impossibly high minLPTokens
+            await expect(
+                plugin.connect(signers[1]).deposit(
+                    signers[1].address, -60, 60,
+                    ethers.parseEther('1'), ethers.parseEther('1'),
+                    ethers.MaxUint256, Number.MAX_SAFE_INTEGER
+                )
+            ).to.be.revertedWith('Insufficient LP tokens');
+        });
+
+        it('should mint INITIAL_LP_TOKEN_TO_MINT when LP token exists but total supply is zero', async function () {
+            // Prepare: deposit, withdraw all, then deposit again to trigger the totalSupply==0 branch
+            const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
+            await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+
+            // First deposit: creates the LP token
+            await plugin.connect(signers[1]).deposit(
+                signers[1].address, -60, 60,
+                ethers.parseEther('1'), ethers.parseEther('1'),
+                0, Number.MAX_SAFE_INTEGER
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(-60, 60);
+            const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
+            const lpBalance = await lpToken.balanceOf(signers[1].address);
+
+            // Withdraw all LP tokens so totalSupply becomes 0
+            await lpToken.connect(signers[1]).approve(pluginAddr, lpBalance);
+            await plugin.connect(signers[1]).withdraw(signers[1].address, -60, 60, lpBalance, 0, 0);
+
+            expect(await lpToken.totalSupply()).to.equal(0n);
+            expect(await plugin.lpTokenByTicks(-60, 60)).to.equal(lpTokenAddress);
+
+            // Second deposit: LP token address is set but totalSupply == 0 → mints INITIAL_LP_TOKEN_TO_MINT
+            await plugin.connect(signers[1]).deposit(
+                signers[1].address, -60, 60,
+                ethers.parseEther('1'), ethers.parseEther('1'),
+                0, Number.MAX_SAFE_INTEGER
+            );
+
+            // Check
+            expect(await lpToken.balanceOf(signers[1].address)).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+        });
+
+        it('should revert with "Position value is zero" when existing position has no measurable value', async function () {
+            // Prepare: deposit, then withdraw almost all LP tokens leaving totalSupply=1.
+            // The residual pool liquidity rounds to 0, so positionValue == 0 on re-deposit.
+            const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
+            await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+
+            await plugin.connect(signers[1]).deposit(
+                signers[1].address, -60, 60,
+                ethers.parseEther('1'), ethers.parseEther('1'),
+                0, Number.MAX_SAFE_INTEGER
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(-60, 60);
+            const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
+
+            // Burn all but 1 LP token so totalSupply == 1 and pool position empties out
+            const burnAmount = INITIAL_LP_TOKEN_TO_MINT - 1n;
+            await plugin.connect(signers[1]).withdraw(signers[1].address, -60, 60, burnAmount, 0, 0);
+            expect(await lpToken.totalSupply()).to.equal(1n);
+
+            // Act + Check: re-deposit triggers _mintLPTokens with initialValue==0 and totalSupply==1
+            await expect(
+                plugin.connect(signers[1]).deposit(
+                    signers[1].address, -60, 60,
+                    ethers.parseEther('1'), ethers.parseEther('1'),
+                    0, Number.MAX_SAFE_INTEGER
+                )
+            ).to.be.revertedWith('Position value is zero');
         });
     });
 

@@ -1,7 +1,6 @@
 import { ethers } from 'hardhat';
 import { setup } from '../utils/setup';
 import { expect } from "chai";
-import { ZeroAddress } from 'ethers';
 
 describe("LPPluginFactory", () => {
 
@@ -84,6 +83,120 @@ describe("LPPluginFactory", () => {
             await expect(
                 pluginFactory.connect(signers[1]).collectFee(pluginAddr, token0Addr, 1000, signers[1].address)
             ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
+        });
+
+        it('should revert setNonFungiblePositionManager when called by non-owner', async function () {
+            // Prepare
+            const { pluginFactory, pluginAddr, positionManagerAddr, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                pluginFactory.connect(signers[1]).setNonFungiblePositionManager(positionManagerAddr, pluginAddr)
+            ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
+        });
+
+        it('should revert setTickSpacing when called by non-owner', async function () {
+            // Prepare
+            const { pluginFactory, poolAddr, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                pluginFactory.connect(signers[1]).setTickSpacing(poolAddr, 120)
+            ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
+        });
+
+        it('should revert setPluginConfig when called by non-owner', async function () {
+            // Prepare
+            const { pluginFactory, poolAddr, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                pluginFactory.connect(signers[1]).setPluginConfig(poolAddr, 0)
+            ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
+        });
+
+        it('should revert setFee when called by non-owner', async function () {
+            // Prepare
+            const { pluginFactory, poolAddr, signers } = await setup(1);
+
+            // Act + Check
+            await expect(
+                pluginFactory.connect(signers[1]).setFee(poolAddr, 100)
+            ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
+        });
+    });
+
+    describe('#setTickSpacing', async () => {
+        it('should set tick spacing on pool when called by owner', async function () {
+            // Prepare
+            const { pluginFactory, poolAddr } = await setup(1);
+
+            // Act + Check
+            await expect(
+                pluginFactory.setTickSpacing(poolAddr, 120)
+            ).to.not.be.reverted;
+        });
+    });
+
+    describe('#setPluginConfig', async () => {
+        it('should set plugin config on pool when called by owner', async function () {
+            // Prepare
+            const { pluginFactory, poolAddr } = await setup(1);
+
+            // Act + Check
+            await expect(
+                pluginFactory.setPluginConfig(poolAddr, 0)
+            ).to.not.be.reverted;
+        });
+    });
+
+    describe('#setFee', async () => {
+        it('should always revert', async function () {
+            // Prepare
+            const { pluginFactory, poolAddr } = await setup(1);
+
+            // Act + Check
+            await expect(
+                pluginFactory.setFee(poolAddr, 100)
+            ).to.be.reverted;
+        });
+    });
+
+    describe('#collectFee', async () => {
+        it('should transfer the full plugin balance when it is less than maxAmount', async function () {
+            // Prepare
+            const { pluginFactory, pluginAddr, token0, signers } = await setup(1);
+            const pluginBalance = ethers.parseEther('1');
+            await token0.mint(pluginAddr, pluginBalance);
+            const maxAmount = ethers.parseEther('10');
+            const recipient = signers[2].address;
+            const pluginBalanceBefore = await token0.balanceOf(pluginAddr)
+            const userBalanceBefore = await token0.balanceOf(recipient)
+
+            // Act
+            await pluginFactory.collectFee(pluginAddr, await token0.getAddress(), maxAmount, recipient);
+
+            // Check
+            expect(await token0.balanceOf(recipient)).to.equal(userBalanceBefore + pluginBalance);
+            expect(await token0.balanceOf(pluginAddr)).to.equal(pluginBalanceBefore - pluginBalance);
+        });
+
+        it('should transfer only maxAmount when plugin balance exceeds maxAmount', async function () {
+           // Prepare
+            const { pluginFactory, pluginAddr, token0, signers } = await setup(1);
+            const pluginBalance = ethers.parseEther('10');
+            await token0.mint(pluginAddr, pluginBalance);
+            const maxAmount = ethers.parseEther('1');
+            const recipient = signers[2].address;
+            const pluginBalanceBefore = await token0.balanceOf(pluginAddr)
+            const userBalanceBefore = await token0.balanceOf(recipient)
+
+            // Act
+            await pluginFactory.collectFee(pluginAddr, await token0.getAddress(), maxAmount, recipient);
+
+            // Check
+            expect(await token0.balanceOf(recipient)).to.equal(userBalanceBefore + maxAmount);
+            expect(await token0.balanceOf(pluginAddr)).to.equal(pluginBalanceBefore - maxAmount);
         });
     });
 });
