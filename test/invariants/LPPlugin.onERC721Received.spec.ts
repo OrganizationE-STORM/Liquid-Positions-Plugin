@@ -1,4 +1,5 @@
 import { ethers } from 'hardhat';
+import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { setup } from '../utils/setup';
 import { expect } from "chai";
 import type { ContractTransactionReceipt } from "ethers"
@@ -85,8 +86,9 @@ describe("LPPlugin", () => {
         const tokenId = await mintNFT(tickUpper, tickLower, amount0Desired, amount1Desired, vars, signedIndex)
         const amount0Min = slippageParams?.amount0Min ?? 0n;
         const amount1Min = slippageParams?.amount1Min ?? 0n;
-        // Default deadline: current time + 10 minutes (in seconds)
-        const deadline = slippageParams?.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 10 * 60);
+        // Default deadline: current block timestamp + 10 minutes
+        const currentTime = await time.latest();
+        const deadline = slippageParams?.deadline ?? BigInt(currentTime + 10 * 60);
         const minLPTokens = slippageParams?.minLPTokens ?? 0n;
         const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
             ['uint256', 'uint256', 'uint256', 'uint256'],
@@ -243,7 +245,7 @@ describe("LPPlugin", () => {
 
             // Set amount0Min higher than what the position holds - should revert
             const excessiveAmount0Min = ethers.parseEther('100');
-            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
+            const futureDeadline = await time.latest() + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['uint256', 'uint256', 'uint256', 'uint256'],
                 [excessiveAmount0Min, 0n, futureDeadline, 0n],
@@ -281,7 +283,7 @@ describe("LPPlugin", () => {
 
             // Set amount1Min higher than what the position holds - should revert
             const excessiveAmount1Min = ethers.parseEther('100');
-            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
+            const futureDeadline = await time.latest() + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['uint256', 'uint256', 'uint256', 'uint256'],
                 [0n, excessiveAmount1Min, futureDeadline, 0n],
@@ -391,7 +393,7 @@ describe("LPPlugin", () => {
 
             // Set minLPTokens to an impossibly high value
             const excessiveMinLPTokens = ethers.parseEther('999999999999999999999999999999999');
-            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
+            const futureDeadline = await time.latest() + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['uint256', 'uint256', 'uint256', 'uint256'],
                 [0n, 0n, futureDeadline, excessiveMinLPTokens],
@@ -454,7 +456,7 @@ describe("LPPlugin", () => {
             const userToken1Before = await token1.balanceOf(user.address);
 
             // Transfer NFT to plugin
-            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
+            const futureDeadline = await time.latest() + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['uint256', 'uint256', 'uint256', 'uint256'],
                 [0n, 0n, futureDeadline, 0n],
@@ -539,7 +541,7 @@ describe("LPPlugin", () => {
             const userToken1Before = await token1.balanceOf(user.address);
 
             // Transfer NFT to plugin
-            const futureDeadline = Math.floor(Date.now() / 1000) + 10 * 60;
+            const futureDeadline = await time.latest() + 10 * 60;
             const calldata = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['uint256', 'uint256', 'uint256', 'uint256'],
                 [0n, 0n, futureDeadline, 0n],
