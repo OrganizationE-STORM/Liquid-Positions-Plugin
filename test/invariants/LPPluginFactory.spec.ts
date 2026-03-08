@@ -124,6 +124,23 @@ describe("LPPluginFactory", () => {
                 pluginFactory.connect(signers[1]).setFee(poolAddr, 100)
             ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
         });
+
+        it('should revert createCustomPool when called by non-owner', async function () {
+            // Prepare
+            const { pluginFactory, token0, token1, signers } = await setup(1);
+            const token0Addr = await token0.getAddress();
+            const token1Addr = await token1.getAddress();
+
+            // Act + Check
+            await expect(
+                pluginFactory.connect(signers[1]).createCustomPool(
+                    signers[1].address,
+                    token0Addr,
+                    token1Addr,
+                    '0x'
+                )
+            ).to.be.revertedWithCustomError(pluginFactory, 'OwnableUnauthorizedAccount');
+        });
     });
 
     describe('#setTickSpacing', async () => {
@@ -197,6 +214,74 @@ describe("LPPluginFactory", () => {
             // Check
             expect(await token0.balanceOf(recipient)).to.equal(userBalanceBefore + maxAmount);
             expect(await token0.balanceOf(pluginAddr)).to.equal(pluginBalanceBefore - maxAmount);
+        });
+    });
+
+    describe('#createCustomPool', async () => {
+        it('should create a custom pool when called by owner', async function () {
+            // Prepare
+            const { pluginFactory, algebraFactory, signers } = await setup(1);
+
+            // Deploy new mock tokens for a fresh pool
+            const MockTokenFactory = await ethers.getContractFactory('MockToken');
+            const newToken0 = await MockTokenFactory.deploy('Token0', 'TK0');
+            const newToken1 = await MockTokenFactory.deploy('Token1', 'TK1');
+            const token0Addr = await newToken0.getAddress();
+            const token1Addr = await newToken1.getAddress();
+            const pluginFactoryAddr = await pluginFactory.getAddress();
+
+            // Act
+            await pluginFactory.createCustomPool(
+                signers[0].address,
+                token0Addr,
+                token1Addr,
+                '0x'
+            );
+
+            // Check - verify pool was created
+            const poolAddr = await algebraFactory.customPoolByPair(
+                pluginFactoryAddr,
+                token0Addr,
+                token1Addr
+            );
+            expect(poolAddr).to.not.equal(ethers.ZeroAddress);
+        });
+
+        it('should register the plugin when creating a custom pool', async function () {
+            // Prepare
+            const { pluginFactory, algebraFactory, signers } = await setup(1);
+
+            // Deploy new mock tokens for a fresh pool
+            const MockTokenFactory = await ethers.getContractFactory('MockToken');
+            const newToken0 = await MockTokenFactory.deploy('Token0', 'TK0');
+            const newToken1 = await MockTokenFactory.deploy('Token1', 'TK1');
+            const token0Addr = await newToken0.getAddress();
+            const token1Addr = await newToken1.getAddress();
+            const pluginFactoryAddr = await pluginFactory.getAddress();
+
+            // Act
+            await pluginFactory.createCustomPool(
+                signers[0].address,
+                token0Addr,
+                token1Addr,
+                '0x'
+            );
+
+            // Get the pool address
+            const poolAddr = await algebraFactory.customPoolByPair(
+                pluginFactoryAddr,
+                token0Addr,
+                token1Addr
+            );
+
+            // Get the plugin address from the pool
+            const pool = await ethers.getContractAt('IAlgebraPool', poolAddr);
+            const newPluginAddr = await pool.plugin();
+
+            // Check - verify plugin is registered by calling a registry-protected function
+            await expect(
+                pluginFactory.setPluginFeeRate(newPluginAddr, 50000)
+            ).to.not.be.reverted;
         });
     });
 });

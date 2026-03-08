@@ -22,7 +22,7 @@ contract LPPluginFactory is
     address public immutable WNativeToken;
     address public immutable lpTokenFactory;
 
-    mapping (address => bool) public registry;
+    mapping(address => bool) public registry;
 
     /// @notice Emitted when a new LPPlugin instance is deployed
     /// @param pool The address of the associated Algebra Pool
@@ -110,7 +110,26 @@ contract LPPluginFactory is
         return address(plugin);
     }
 
-    function setNonFungiblePositionManager(address manager, address plugin) onlyOwner external {
+    function setNonFungiblePositionManager(
+        address manager,
+        address plugin
+    ) external onlyOwner {
         LPPlugin(plugin).setNonFungiblePositionManager(manager);
+    }
+
+    function createCustomPool(
+        address creator,
+        address tokenA,
+        address tokenB,
+        bytes calldata data
+    ) external override onlyOwner returns (address customPool) {
+        return
+            IAlgebraCustomPoolEntryPoint(entryPoint).createCustomPool(
+                address(this),
+                creator,
+                tokenA,
+                tokenB,
+                data
+            );
     }
 }
