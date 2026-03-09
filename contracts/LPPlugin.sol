@@ -318,12 +318,14 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         (uint256 amount0Used, uint256 amount1Used, ) = ILPCallback(callback)
             .mint(from, tickLower, tickUpper, amount0, amount1);
 
+        uint256 lpReceived = ILPToken(lpTokenByTicks[tickLower][tickUpper])
+            .balanceOf(address(this)) - lpBefore;
+        require(lpReceived >= minLPTokens, "Insufficient LP tokens");
+
         require(
             ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
                 from,
-                ILPToken(lpTokenByTicks[tickLower][tickUpper]).balanceOf(
-                    address(this)
-                ) - lpBefore
+                lpReceived
             ),
             "Transfer failed"
         );
@@ -335,9 +337,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             IERC20(IAlgebraPool(pool).token0()).safeTransfer(from, refund0);
         if (refund1 > 0)
             IERC20(IAlgebraPool(pool).token1()).safeTransfer(from, refund1);
-        uint256 lpReceived = ILPToken(lpTokenByTicks[tickLower][tickUpper])
-            .balanceOf(address(this)) - lpBefore;
-        require(lpReceived >= minLPTokens, "Insufficient LP tokens");
 
         return IERC721Receiver.onERC721Received.selector;
     }
