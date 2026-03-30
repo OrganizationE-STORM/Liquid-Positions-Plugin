@@ -112,3 +112,17 @@ bundle/
 artifacts/
 typechain/types/
 /artifacts
+
+# Hardhat generated
+typechain-types/
+cache/
+coverage/
+coverage.json
+
+# Environment
+.env
+
+# Tool artifacts
+.clank/
+.claude/
+clank_reports/
