@@ -534,21 +534,33 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ? ILPToken(lpTokenAddress).balanceOf(address(this))
             : 0;
 
-        ILPCallback(callback).mint(
-            recipient,
-            tickLower,
-            tickUpper,
-            actual0,
-            actual1
-        );
+        (uint256 amount0Used, uint256 amount1Used, ) = ILPCallback(callback)
+            .mint(recipient, tickLower, tickUpper, actual0, actual1);
 
         uint256 lpReceived = ILPToken(lpTokenByTicks[tickLower][tickUpper])
             .balanceOf(address(this)) - lpBefore;
         require(lpReceived >= minLPTokens, "Insufficient LP tokens");
 
-        ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
-            recipient,
-            lpReceived
+        require(
+            ILPToken(lpTokenByTicks[tickLower][tickUpper]).transfer(
+                recipient,
+                lpReceived
+            ),
+            "Transfer failed"
         );
+
+        // Refund unconsumed tokens using return values, not balance deltas
+        uint256 refund0 = actual0 - amount0Used;
+        uint256 refund1 = actual1 - amount1Used;
+        if (refund0 > 0)
+            IERC20(IAlgebraPool(pool).token0()).safeTransfer(
+                recipient,
+                refund0
+            );
+        if (refund1 > 0)
+            IERC20(IAlgebraPool(pool).token1()).safeTransfer(
+                recipient,
+                refund1
+            );
     }
 }
