@@ -37,8 +37,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         int24 tickUpper;
         uint256 lpTokensToBurn;
         uint256 totalLPSupply;
-        uint128 fees0;
-        uint128 fees1;
     }
 
     struct Cache {
@@ -174,9 +172,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         require(lpTokensToBurn > 0, "Invalid LP tokens value");
 
         ILPToken lpToken = ILPToken(lpTokenByTicks[tickLower][tickUpper]);
-        (uint256 liquidity, , , uint128 fees0, uint128 fees1) = IAlgebraPool(
-            pool
-        ).positions(getPositionKey(address(this), tickLower, tickUpper));
+        (uint256 liquidity, , , , ) = IAlgebraPool(pool).positions(
+            getPositionKey(address(this), tickLower, tickUpper)
+        );
         uint256 totalSupply = lpToken.totalSupply();
         _burnLPTokens(msg.sender, lpToken, lpTokensToBurn);
 
@@ -187,9 +185,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 tickLower,
                 tickUpper,
                 lpTokensToBurn,
-                totalSupply,
-                fees0,
-                fees1
+                totalSupply
             )
         );
 
@@ -474,6 +470,14 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
             ),
             abi.encode(0)
         );
+        (, , , uint128 fees0, uint128 fees1) = IAlgebraPool(pool).positions(
+            getPositionKey(address(this), params.tickLower, params.tickUpper)
+        );
+        // After burn(), Algebra's fees fields include both newly realized fees and
+        // the burned principal credited to the position, so subtract lAmount first
+        // and only pro-rate the fee-only remainder.
+        uint128 feeOnly0 = fees0 - SafeCast.toUint128(lAmount0);
+        uint128 feeOnly1 = fees1 - SafeCast.toUint128(lAmount1);
 
         (amount0, amount1) = IAlgebraPool(pool).collect(
             params.recipient,
@@ -483,7 +487,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        params.fees0,
+                        feeOnly0,
                         params.totalLPSupply
                     )
                 ),
@@ -491,7 +495,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 SafeCast.toUint128(
                     Math.mulDiv(
                         params.lpTokensToBurn,
-                        params.fees1,
+                        feeOnly1,
                         params.totalLPSupply
                     )
                 )

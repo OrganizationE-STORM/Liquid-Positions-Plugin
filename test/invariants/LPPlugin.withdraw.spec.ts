@@ -6,6 +6,12 @@ import { LPCallback } from '../../typechain-types';
 
 const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
+const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
+const FULL_RANGE_TICK_LOWER = -887220;
+const FULL_RANGE_TICK_UPPER = 887220;
+const FULL_RANGE_DEPOSIT = ethers.parseEther('0.1');
+const DONATED_FEE_0 = ethers.parseEther('0.003');
+const DONATED_FEE_1 = ethers.parseEther('0.003');
 
 describe("LPPlugin", () => {
     const generateParamsForTest = () => {
@@ -47,6 +53,18 @@ describe("LPPlugin", () => {
             throw new Error(`No amounts found in event`)
         }
         return { amount0, amount1, liquidity }
+    }
+
+    const getPositionKey = (owner: string, tickLower: number, tickUpper: number) => {
+        const encoded =
+            (BigInt(owner) << 48n) |
+            (BigInt.asUintN(24, BigInt(tickLower)) << 24n) |
+            BigInt.asUintN(24, BigInt(tickUpper));
+
+        return ethers.zeroPadValue(
+            ethers.toBeHex(encoded & ((1n << 256n) - 1n)),
+            32
+        );
     }
 
     describe('#withdraw', async () => {
@@ -226,5 +244,176 @@ describe("LPPlugin", () => {
                 console.log(`${currentTest}/${NUM_FUZZ_RUNS}  [${tickLower}/${tickUpper}]`)
             }
         }).timeout(TIMEOUT_TESTS)
+
+        it('collects newly realized fees on a full withdraw and leaves no residual value', async function () {
+            const { callback, pool, plugin, pluginAddr, token0, token1, signers } = await setup(3);
+            const victim = signers[1];
+            const donor = signers[2];
+
+            await token0.connect(victim).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(victim).approve(pluginAddr, ethers.MaxUint256);
+
+            const depositTx = await plugin.connect(victim).deposit(
+                victim.address,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER,
+                FULL_RANGE_DEPOSIT,
+                FULL_RANGE_DEPOSIT,
+                0,
+                Number.MAX_SAFE_INTEGER
+            );
+
+            const { amount0: amount0Used, amount1: amount1Used } = readNewAmountsFromMintEvent(
+                await depositTx.wait(),
+                callback
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER
+            );
+            const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
+            const positionKey = getPositionKey(
+                pluginAddr,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER
+            );
+
+            await token0.connect(donor).transfer(await pool.getAddress(), DONATED_FEE_0);
+            await token1.connect(donor).transfer(await pool.getAddress(), DONATED_FEE_1);
+
+            const [, , , preWithdrawFees0, preWithdrawFees1] = await pool.positions(positionKey);
+            expect(preWithdrawFees0 + preWithdrawFees1).to.equal(0n);
+
+            const victim0Before = await token0.balanceOf(victim.address);
+            const victim1Before = await token1.balanceOf(victim.address);
+            const victimLpBalance = await lpToken.balanceOf(victim.address);
+
+            await plugin.connect(victim).withdraw(
+                victim.address,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER,
+                victimLpBalance,
+                0,
+                0
+            );
+
+            const victim0After = await token0.balanceOf(victim.address);
+            const victim1After = await token1.balanceOf(victim.address);
+            const { price } = await pool.globalState();
+            const [liquidityAfter, , , fees0After, fees1After] = await pool.positions(positionKey);
+
+            expect(victim0After - victim0Before).to.be.closeTo(
+                amount0Used + DONATED_FEE_0,
+                2n
+            );
+            expect(victim1After - victim1Before).to.be.closeTo(
+                amount1Used + DONATED_FEE_1,
+                2n
+            );
+            expect(liquidityAfter).to.equal(0n);
+            expect(await lpToken.totalSupply()).to.equal(0n);
+            expect(fees0After).to.equal(0n);
+            expect(fees1After).to.equal(0n);
+            expect(
+                await plugin.positionValue(
+                    FULL_RANGE_TICK_LOWER,
+                    FULL_RANGE_TICK_UPPER,
+                    price
+                )
+            ).to.equal(0n);
+        });
+
+        it('does not leave stealable value for the next depositor after the last LP exits', async function () {
+            const { pool, plugin, pluginAddr, token0, token1, signers } = await setup(3);
+            const victim = signers[1];
+            const donor = signers[2];
+            const attacker = signers[3];
+
+            for (const user of [victim, attacker]) {
+                await token0.connect(user).approve(pluginAddr, ethers.MaxUint256);
+                await token1.connect(user).approve(pluginAddr, ethers.MaxUint256);
+            }
+
+            await plugin.connect(victim).deposit(
+                victim.address,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER,
+                FULL_RANGE_DEPOSIT,
+                FULL_RANGE_DEPOSIT,
+                0,
+                Number.MAX_SAFE_INTEGER
+            );
+
+            const lpTokenAddress = await plugin.lpTokenByTicks(
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER
+            );
+            const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
+            const positionKey = getPositionKey(
+                pluginAddr,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER
+            );
+
+            await token0.connect(donor).transfer(await pool.getAddress(), DONATED_FEE_0);
+            await token1.connect(donor).transfer(await pool.getAddress(), DONATED_FEE_1);
+
+            const victimLpBalance = await lpToken.balanceOf(victim.address);
+            await plugin.connect(victim).withdraw(
+                victim.address,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER,
+                victimLpBalance,
+                0,
+                0
+            );
+
+            const { price } = await pool.globalState();
+            expect(
+                await plugin.positionValue(
+                    FULL_RANGE_TICK_LOWER,
+                    FULL_RANGE_TICK_UPPER,
+                    price
+                )
+            ).to.equal(0n);
+
+            const [liquidityAfterVictimExit, , , fees0AfterVictimExit, fees1AfterVictimExit] =
+                await pool.positions(positionKey);
+            expect(liquidityAfterVictimExit).to.equal(0n);
+            expect(fees0AfterVictimExit).to.equal(0n);
+            expect(fees1AfterVictimExit).to.equal(0n);
+
+            const attacker0Before = await token0.balanceOf(attacker.address);
+            const attacker1Before = await token1.balanceOf(attacker.address);
+
+            await plugin.connect(attacker).deposit(
+                attacker.address,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER,
+                1n,
+                1n,
+                0,
+                Number.MAX_SAFE_INTEGER
+            );
+
+            const attackerLpBalance = await lpToken.balanceOf(attacker.address);
+            expect(attackerLpBalance).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+
+            await plugin.connect(attacker).withdraw(
+                attacker.address,
+                FULL_RANGE_TICK_LOWER,
+                FULL_RANGE_TICK_UPPER,
+                attackerLpBalance,
+                0,
+                0
+            );
+
+            const attacker0After = await token0.balanceOf(attacker.address);
+            const attacker1After = await token1.balanceOf(attacker.address);
+            const attackerNet = (attacker0After - attacker0Before) + (attacker1After - attacker1Before);
+
+            expect(attackerNet).to.be.closeTo(0n, 2n);
+        });
     })
 })
