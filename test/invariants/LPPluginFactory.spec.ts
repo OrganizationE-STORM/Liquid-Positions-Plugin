@@ -2,6 +2,9 @@ import { ethers } from 'hardhat';
 import { setup } from '../utils/setup';
 import { expect } from "chai";
 
+const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
+const TIMEOUT_TESTS = 100_000_000_000_000;
+
 describe("LPPluginFactory", () => {
 
     describe('#registry', async () => {
@@ -181,40 +184,48 @@ describe("LPPluginFactory", () => {
 
     describe('#collectFee', async () => {
         it('should transfer the full plugin balance when it is less than maxAmount', async function () {
-            // Prepare
-            const { pluginFactory, pluginAddr, token0, signers } = await setup(1);
-            const pluginBalance = ethers.parseEther('1');
-            await token0.mint(pluginAddr, pluginBalance);
-            const maxAmount = ethers.parseEther('10');
-            const recipient = signers[2].address;
-            const pluginBalanceBefore = await token0.balanceOf(pluginAddr)
-            const userBalanceBefore = await token0.balanceOf(recipient)
+            for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
+                // Prepare: random balance in [1, 9] ETH, maxAmount always larger
+                const balanceEth = BigInt(Math.floor(Math.random() * 9) + 1);
+                const maxEth = balanceEth + BigInt(Math.floor(Math.random() * 10) + 1);
+                const { pluginFactory, pluginAddr, token0, signers } = await setup(1);
+                const pluginBalance = ethers.parseEther(balanceEth.toString());
+                await token0.mint(pluginAddr, pluginBalance);
+                const maxAmount = ethers.parseEther(maxEth.toString());
+                const recipient = signers[2].address;
+                const pluginBalanceBefore = await token0.balanceOf(pluginAddr);
+                const userBalanceBefore = await token0.balanceOf(recipient);
 
-            // Act
-            await pluginFactory.collectFee(pluginAddr, await token0.getAddress(), maxAmount, recipient);
+                // Act
+                await pluginFactory.collectFee(pluginAddr, await token0.getAddress(), maxAmount, recipient);
 
-            // Check
-            expect(await token0.balanceOf(recipient)).to.equal(userBalanceBefore + pluginBalance);
-            expect(await token0.balanceOf(pluginAddr)).to.equal(pluginBalanceBefore - pluginBalance);
-        });
+                // Check
+                expect(await token0.balanceOf(recipient)).to.equal(userBalanceBefore + pluginBalance);
+                expect(await token0.balanceOf(pluginAddr)).to.equal(pluginBalanceBefore - pluginBalance);
+            }
+        }).timeout(TIMEOUT_TESTS);
 
         it('should transfer only maxAmount when plugin balance exceeds maxAmount', async function () {
-           // Prepare
-            const { pluginFactory, pluginAddr, token0, signers } = await setup(1);
-            const pluginBalance = ethers.parseEther('10');
-            await token0.mint(pluginAddr, pluginBalance);
-            const maxAmount = ethers.parseEther('1');
-            const recipient = signers[2].address;
-            const pluginBalanceBefore = await token0.balanceOf(pluginAddr)
-            const userBalanceBefore = await token0.balanceOf(recipient)
+            for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
+                // Prepare: random maxAmount in [1, 9] ETH, balance always larger
+                const maxEth = BigInt(Math.floor(Math.random() * 9) + 1);
+                const balanceEth = maxEth + BigInt(Math.floor(Math.random() * 10) + 1);
+                const { pluginFactory, pluginAddr, token0, signers } = await setup(1);
+                const pluginBalance = ethers.parseEther(balanceEth.toString());
+                await token0.mint(pluginAddr, pluginBalance);
+                const maxAmount = ethers.parseEther(maxEth.toString());
+                const recipient = signers[2].address;
+                const pluginBalanceBefore = await token0.balanceOf(pluginAddr);
+                const userBalanceBefore = await token0.balanceOf(recipient);
 
-            // Act
-            await pluginFactory.collectFee(pluginAddr, await token0.getAddress(), maxAmount, recipient);
+                // Act
+                await pluginFactory.collectFee(pluginAddr, await token0.getAddress(), maxAmount, recipient);
 
-            // Check
-            expect(await token0.balanceOf(recipient)).to.equal(userBalanceBefore + maxAmount);
-            expect(await token0.balanceOf(pluginAddr)).to.equal(pluginBalanceBefore - maxAmount);
-        });
+                // Check
+                expect(await token0.balanceOf(recipient)).to.equal(userBalanceBefore + maxAmount);
+                expect(await token0.balanceOf(pluginAddr)).to.equal(pluginBalanceBefore - maxAmount);
+            }
+        }).timeout(TIMEOUT_TESTS);
     });
 
     describe('#createCustomPool', async () => {

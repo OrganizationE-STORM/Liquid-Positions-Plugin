@@ -31,7 +31,8 @@ describe("LPPlugin", () => {
         return { amount0, amount1, liquidity }
     }
 
-    const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
+    const MINIMUM_LIQUIDITY = 1000n;
+    const LOCKED_LIQUIDITY_RECEIVER = '0x000000000000000000000000000000000000dEaD';
     let currentTest = 0;
 
     describe('#getCurrentFee', async () => {
@@ -209,8 +210,8 @@ describe("LPPlugin", () => {
             ).to.be.revertedWith('Insufficient LP tokens');
         });
 
-        it('should mint INITIAL_LP_TOKEN_TO_MINT when LP token exists but total supply is zero', async function () {
-            // Prepare: deposit, withdraw all, then deposit again to trigger the totalSupply==0 branch
+        it('should keep the locked minimum supply when the first LP exits and allow later deposits', async function () {
+            // Prepare: deposit, withdraw all user-owned LP, then deposit again.
             const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
             await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
             await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
@@ -226,14 +227,15 @@ describe("LPPlugin", () => {
             const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
             const lpBalance = await lpToken.balanceOf(signers[1].address);
 
-            // Withdraw all LP tokens so totalSupply becomes 0
+            // Withdraw all user-owned LP tokens; the permanently locked minimum remains.
             await lpToken.connect(signers[1]).approve(pluginAddr, lpBalance);
             await plugin.connect(signers[1]).withdraw(signers[1].address, -60, 60, lpBalance, 0, 0);
 
-            expect(await lpToken.totalSupply()).to.equal(0n);
+            expect(await lpToken.totalSupply()).to.equal(MINIMUM_LIQUIDITY);
+            expect(await lpToken.balanceOf(LOCKED_LIQUIDITY_RECEIVER)).to.equal(MINIMUM_LIQUIDITY);
             expect(await plugin.lpTokenByTicks(-60, 60)).to.equal(lpTokenAddress);
 
-            // Second deposit: LP token address is set but totalSupply == 0 → mints INITIAL_LP_TOKEN_TO_MINT
+            // Second deposit: LP token address is set and proportional minting resumes from the locked base.
             await plugin.connect(signers[1]).deposit(
                 signers[1].address, -60, 60,
                 ethers.parseEther('1'), ethers.parseEther('1'),
@@ -241,38 +243,65 @@ describe("LPPlugin", () => {
             );
 
             // Check
-            expect(await lpToken.balanceOf(signers[1].address)).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+            expect(await lpToken.balanceOf(signers[1].address)).to.be.greaterThan(0n);
+            expect(await lpToken.totalSupply()).to.be.greaterThan(MINIMUM_LIQUIDITY);
         });
 
-        it('should revert with "Position value is zero" when existing position has no measurable value', async function () {
-            // Prepare: deposit, then withdraw almost all LP tokens leaving totalSupply=1.
-            // The residual pool liquidity rounds to 0, so positionValue == 0 on re-deposit.
+        it('should revert when the first deposit value is below the minimum initialization threshold', async function () {
             const { plugin, pluginAddr, token0, token1, signers } = await setup(1);
             await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
             await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
-
-            await plugin.connect(signers[1]).deposit(
-                signers[1].address, -60, 60,
-                ethers.parseEther('1'), ethers.parseEther('1'),
-                0, Number.MAX_SAFE_INTEGER
-            );
-
-            const lpTokenAddress = await plugin.lpTokenByTicks(-60, 60);
-            const lpToken = await ethers.getContractAt('LPToken', lpTokenAddress);
-
-            // Burn all but 1 LP token so totalSupply == 1 and pool position empties out
-            const burnAmount = INITIAL_LP_TOKEN_TO_MINT - 1n;
-            await plugin.connect(signers[1]).withdraw(signers[1].address, -60, 60, burnAmount, 0, 0);
-            expect(await lpToken.totalSupply()).to.equal(1n);
-
-            // Act + Check: re-deposit triggers _mintLPTokens with initialValue==0 and totalSupply==1
             await expect(
                 plugin.connect(signers[1]).deposit(
                     signers[1].address, -60, 60,
-                    ethers.parseEther('1'), ethers.parseEther('1'),
+                    1n, 1n,
                     0, Number.MAX_SAFE_INTEGER
                 )
-            ).to.be.revertedWith('Position value is zero');
+            ).to.be.revertedWith('Initial value too low');
+        });
+
+        it('should derive the initialization minimum inside LPPlugin from token1 decimals and leave non-zero position value after first mint', async function () {
+            const { plugin, pluginAddr, pool, token0, token1, signers } = await setup(1);
+            await token0.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+            await token1.connect(signers[1]).approve(pluginAddr, ethers.MaxUint256);
+
+            const minInitialValueInterface = new ethers.Interface([
+                'function getMinInitialValue() view returns (uint256)',
+            ]);
+            const rawMinInitialValue = await ethers.provider.call({
+                to: await plugin.getAddress(),
+                data: minInitialValueInterface.encodeFunctionData('getMinInitialValue'),
+            });
+            const [minInitialValue] = minInitialValueInterface.decodeFunctionResult(
+                'getMinInitialValue',
+                rawMinInitialValue
+            );
+
+            const token1Decimals = Number(await token1.decimals());
+            const expectedMinimum =
+                token1Decimals > 3
+                    ? 10n ** BigInt(token1Decimals - 3)
+                    : 1n;
+            expect(minInitialValue).to.equal(expectedMinimum);
+
+            const tickSpacing = Number(await pool.tickSpacing());
+            const tickLower = -tickSpacing;
+            const tickUpper = tickSpacing;
+
+            await plugin.connect(signers[1]).deposit(
+                signers[1].address,
+                tickLower,
+                tickUpper,
+                minInitialValue,
+                minInitialValue,
+                0,
+                Number.MAX_SAFE_INTEGER
+            );
+
+            const { price } = await pool.globalState();
+            expect(
+                await plugin.positionValue(tickLower, tickUpper, price)
+            ).to.be.greaterThan(0n);
         });
     });
 
@@ -325,6 +354,7 @@ describe("LPPlugin", () => {
 
                 const state = await pool.globalState()
                 let totalSupply = await lpToken.totalSupply()
+                const firstTotalSupply = totalSupply
                 let initialValue = await plugin.positionValue(tickLower, tickUpper, state.price)
 
                 const trxSecondMint = await plugin.connect(signers[2]).deposit(
@@ -365,7 +395,7 @@ describe("LPPlugin", () => {
                 const lpTokensToMintForThirdUser = (userValue * totalSupply) / initialValue
                 const balanceThirdUser = await lpToken.balanceOf(signers[3].address)
 
-                expect(userBalance).to.be.equal(INITIAL_LP_TOKEN_TO_MINT)
+                expect(userBalance).to.be.equal(firstTotalSupply - MINIMUM_LIQUIDITY)
                 expect(balanceThirdUser).to.be.equals(lpTokensToMintForThirdUser)
                 expect(secondUserBalance).to.be.equals(lpTokensToMint)
                 expect(lpTokenAddress).to.not.be.equals(ZeroAddress)

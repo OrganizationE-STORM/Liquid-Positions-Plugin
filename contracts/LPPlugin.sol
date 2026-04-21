@@ -56,7 +56,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     // Plugin state variables
     mapping(int24 => mapping(int24 => address)) public lpTokenByTicks; // Maps tick ranges to LPToken addresses
 
-    uint256 private constant INITIAL_LP_TOKEN_TO_MINT = 10 ** 32;
+    uint256 private constant MINIMUM_LIQUIDITY = 10 ** 3;
+    address private constant LOCKED_LIQUIDITY_RECEIVER =
+        0x000000000000000000000000000000000000dEaD;
 
     /// @notice Plugin fee in PPM (parts per million, e.g., 10000 = 1%)
     uint24 public pluginFeeRate;
@@ -83,6 +85,15 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     function parseCalldata(bytes memory data) internal pure returns (address) {
         address payer = abi.decode(data, (address));
         return payer;
+    }
+
+    function getMinInitialValue() public view returns (uint256) {
+        uint8 token1Decimals = IERC20Metadata(IAlgebraPool(pool).token1())
+            .decimals();
+        if (token1Decimals > 3) {
+            return 10 ** uint256(token1Decimals - 3);
+        }
+        return 1;
     }
 
     /// @notice Called for plugin initialization
@@ -381,6 +392,8 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         address lpTokenAddress = lpTokenByTicks[tickLower][tickUpper];
         uint256 lpTokensToMint;
         ILPToken lpToken;
+        uint256 userValue = amount1 +
+            convertToken0ToToken1(amount0, _cache.price);
 
         if (lpTokenAddress == address(0)) {
             string memory tokenName = string.concat(
@@ -399,28 +412,27 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
             emit TokenCreated(tickLower, tickUpper, newTokenAddress);
             lpTokenByTicks[tickLower][tickUpper] = newTokenAddress;
-            lpTokensToMint = INITIAL_LP_TOKEN_TO_MINT;
         } else {
             lpToken = ILPToken(lpTokenAddress);
-            uint256 totalSupply = lpToken.totalSupply();
-            uint256 userValue = amount1 +
-                convertToken0ToToken1(amount0, _cache.price);
+        }
 
-            if (totalSupply == 0) {
-                lpTokensToMint = INITIAL_LP_TOKEN_TO_MINT;
-            } else if (_cache.initialValue > 0) {
-                lpTokensToMint = Math.mulDiv(
-                    userValue,
-                    totalSupply,
-                    _cache.initialValue
-                );
-            } else {
-                revert("Position value is zero");
-            }
+        uint256 totalSupply = lpToken.totalSupply();
+        if (totalSupply == 0) {
+            require(userValue >= getMinInitialValue(), "Initial value too low");
+            lpTokensToMint = userValue - MINIMUM_LIQUIDITY;
+            lpToken.mint(LOCKED_LIQUIDITY_RECEIVER, MINIMUM_LIQUIDITY);
+        } else if (_cache.initialValue > 0) {
+            lpTokensToMint = Math.mulDiv(
+                userValue,
+                totalSupply,
+                _cache.initialValue
+            );
+        } else {
+            revert("Position value is zero");
+        }
 
-            if (lpTokensToMint == 0 && userValue > 0) {
-                lpTokensToMint = 1;
-            }
+        if (lpTokensToMint == 0 && userValue > 0) {
+            lpTokensToMint = 1;
         }
         // Mint proportional lptoken to user
         lpToken.mint(recipient, lpTokensToMint);

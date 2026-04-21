@@ -10,7 +10,7 @@ const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
 
 describe("LPPlugin", () => {
-    const INITIAL_LP_TOKEN_TO_MINT = 10n ** 32n;
+    const MINIMUM_LIQUIDITY = 1000n;
 
     const readTokenIdFromEvent = (
         positionManager: INonfungiblePositionManager,
@@ -160,7 +160,7 @@ describe("LPPlugin", () => {
                 const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress)
                 const userBalance = await lpToken.balanceOf(signers[1].address)
 
-                expect(userBalance).to.be.equals(INITIAL_LP_TOKEN_TO_MINT)
+                expect(userBalance).to.be.equals((await lpToken.totalSupply()) - MINIMUM_LIQUIDITY)
                 expect(erc721BalancePlugin).to.be.equals(0)
                 expect(erc721BalanceUser).to.be.equals(0)
                 expect(tokenIdNft).not.to.be.undefined
@@ -329,7 +329,7 @@ describe("LPPlugin", () => {
             const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
             const userBalance = await lpToken.balanceOf(signers[1].address);
 
-            expect(userBalance).to.be.equals(INITIAL_LP_TOKEN_TO_MINT);
+            expect(userBalance).to.be.equals((await lpToken.totalSupply()) - MINIMUM_LIQUIDITY);
             expect(tokenIdNft).not.to.be.undefined;
             expect(receiptTransferFrom).to.not.be.undefined;
         }).timeout(TIMEOUT_TESTS);
@@ -478,7 +478,7 @@ describe("LPPlugin", () => {
             expect(lpTokenAddress).to.not.equal(ethers.ZeroAddress);
             const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
             const userLPBalance = await lpToken.balanceOf(user.address);
-            expect(userLPBalance).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+            expect(userLPBalance).to.equal((await lpToken.totalSupply()) - MINIMUM_LIQUIDITY);
 
             // For position above current tick, token1 should be refunded (not used by pool)
             // token0 is consumed by the position
@@ -563,7 +563,7 @@ describe("LPPlugin", () => {
             expect(lpTokenAddress).to.not.equal(ethers.ZeroAddress);
             const lpToken = await ethers.getContractAt("LPToken", lpTokenAddress);
             const userLPBalance = await lpToken.balanceOf(user.address);
-            expect(userLPBalance).to.equal(INITIAL_LP_TOKEN_TO_MINT);
+            expect(userLPBalance).to.equal((await lpToken.totalSupply()) - MINIMUM_LIQUIDITY);
 
             // For position below current tick, token0 should be refunded (not used by pool)
             // token1 is consumed by the position

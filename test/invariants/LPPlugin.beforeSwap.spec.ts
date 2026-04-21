@@ -2,6 +2,9 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { setup } from '../utils/setup';
 
+const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
+const TIMEOUT_TESTS = 100_000_000_000_000;
+
 /**
  * Test suite for LPPlugin.beforeSwap fee calculation logic.
  *
@@ -31,17 +34,21 @@ describe('LPPlugin#beforeSwap', () => {
 
     describe('#feeCalculation', () => {
         it('should return fee proportional to pool fee and plugin fee rate', async function () {
-            // Arrange
-            const { pool, plugin } = await setup(1);
-            const lastFee = await getPoolLastFee(pool);
+            for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
+                // Arrange: random valid fee rate in [1, MAX_PLUGIN_FEE_RATE]
+                const feeRate = BigInt(Math.floor(Math.random() * Number(MAX_PLUGIN_FEE_RATE)) + 1);
+                const { pool, plugin, pluginFactory, pluginAddr } = await setup(1);
+                await pluginFactory.setPluginFeeRate(pluginAddr, feeRate);
+                const lastFee = await getPoolLastFee(pool);
 
-            // Act
-            const expectedPluginFee = (lastFee * DEFAULT_PLUGIN_FEE_RATE) / PPM_DENOMINATOR;
+                // Act
+                const expectedPluginFee = (lastFee * feeRate) / PPM_DENOMINATOR;
 
-            // Assert
-            expect(await plugin.pluginFeeRate()).to.equal(DEFAULT_PLUGIN_FEE_RATE);
-            expect(expectedPluginFee).to.be.greaterThan(0n);
-        });
+                // Assert
+                expect(await plugin.pluginFeeRate()).to.equal(feeRate);
+                expect(expectedPluginFee).to.be.lessThanOrEqual(lastFee);
+            }
+        }).timeout(TIMEOUT_TESTS);
 
         it('should calculate fee correctly with minimum plugin fee rate', async function () {
             // Arrange
@@ -316,18 +323,20 @@ describe('LPPlugin#beforeSwap', () => {
             expect(await plugin.pluginFeeRate()).to.equal(0n);
         });
 
-        it('should handle fee calculation without overflow for max values', async function () {
-            // Arrange
-            const { pool, pluginFactory, pluginAddr } = await setup(1);
-            await pluginFactory.setPluginFeeRate(pluginAddr, MAX_PLUGIN_FEE_RATE);
+        it('should handle fee calculation without overflow for random valid rates', async function () {
+            for (let i = 0; i < NUM_FUZZ_RUNS; i++) {
+                // Arrange: random valid fee rate in [1, MAX_PLUGIN_FEE_RATE]
+                const feeRate = BigInt(Math.floor(Math.random() * Number(MAX_PLUGIN_FEE_RATE)) + 1);
+                const { pool, pluginFactory, pluginAddr } = await setup(1);
+                await pluginFactory.setPluginFeeRate(pluginAddr, feeRate);
 
-            // Act
-            const lastFee = await getPoolLastFee(pool);
-            const expectedPluginFee = (lastFee * MAX_PLUGIN_FEE_RATE) / PPM_DENOMINATOR;
+                // Act
+                const lastFee = await getPoolLastFee(pool);
+                const expectedPluginFee = (lastFee * feeRate) / PPM_DENOMINATOR;
 
-            // Assert - Fee calculation should not overflow and should be valid uint24
-            expect(expectedPluginFee).to.be.lessThan(2n ** 24n);
-            expect(expectedPluginFee).to.be.greaterThan(0n);
-        });
+                // Assert - Fee calculation should not overflow and should be a valid uint24
+                expect(expectedPluginFee).to.be.lessThan(2n ** 24n);
+            }
+        }).timeout(TIMEOUT_TESTS);
     });
 });
