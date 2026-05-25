@@ -570,12 +570,12 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         uint256 refund1 = actual1 - amount1Used;
         if (refund0 > 0)
             IERC20(IAlgebraPool(pool).token0()).safeTransfer(
-                recipient,
+                msg.sender,
                 refund0
             );
         if (refund1 > 0)
             IERC20(IAlgebraPool(pool).token1()).safeTransfer(
-                recipient,
+                msg.sender,
                 refund1
             );
     }
