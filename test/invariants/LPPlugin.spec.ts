@@ -31,7 +31,6 @@ describe("LPPlugin", () => {
         return { amount0, amount1, liquidity }
     }
 
-    const MINIMUM_LIQUIDITY = 1000n;
     const LOCKED_LIQUIDITY_RECEIVER = '0x000000000000000000000000000000000000dEaD';
     let currentTest = 0;
 
@@ -231,8 +230,9 @@ describe("LPPlugin", () => {
             await lpToken.connect(signers[1]).approve(pluginAddr, lpBalance);
             await plugin.connect(signers[1]).withdraw(signers[1].address, -60, 60, lpBalance, 0, 0);
 
-            expect(await lpToken.totalSupply()).to.equal(MINIMUM_LIQUIDITY);
-            expect(await lpToken.balanceOf(LOCKED_LIQUIDITY_RECEIVER)).to.equal(MINIMUM_LIQUIDITY);
+            const minLocked = await plugin.getMinLockedLiquidity();
+            expect(await lpToken.totalSupply()).to.equal(minLocked);
+            expect(await lpToken.balanceOf(LOCKED_LIQUIDITY_RECEIVER)).to.equal(minLocked);
             expect(await plugin.lpTokenByTicks(-60, 60)).to.equal(lpTokenAddress);
 
             // Second deposit: LP token address is set and proportional minting resumes from the locked base.
@@ -244,7 +244,7 @@ describe("LPPlugin", () => {
 
             // Check
             expect(await lpToken.balanceOf(signers[1].address)).to.be.greaterThan(0n);
-            expect(await lpToken.totalSupply()).to.be.greaterThan(MINIMUM_LIQUIDITY);
+            expect(await lpToken.totalSupply()).to.be.greaterThan(minLocked);
         });
 
         it('should revert when the first deposit value is below the minimum initialization threshold', async function () {
@@ -278,10 +278,13 @@ describe("LPPlugin", () => {
             );
 
             const token1Decimals = Number(await token1.decimals());
-            const expectedMinimum =
-                token1Decimals > 3
-                    ? 10n ** BigInt(token1Decimals - 3)
+            const expectedMinLocked =
+                token1Decimals > 6
+                    ? 10n ** BigInt(token1Decimals - 6)
                     : 1n;
+            // minInitial pegged to 1000 * minLocked for constant ~0.1% lock
+            // dilution across all token1 decimal counts.
+            const expectedMinimum = 1000n * expectedMinLocked;
             expect(minInitialValue).to.equal(expectedMinimum);
 
             const tickSpacing = Number(await pool.tickSpacing());
@@ -394,8 +397,9 @@ describe("LPPlugin", () => {
                 userValue = amount1NewThirdMint + token0InToken1
                 const lpTokensToMintForThirdUser = (userValue * totalSupply) / initialValue
                 const balanceThirdUser = await lpToken.balanceOf(signers[3].address)
+                const minLocked = await plugin.getMinLockedLiquidity()
 
-                expect(userBalance).to.be.equal(firstTotalSupply - MINIMUM_LIQUIDITY)
+                expect(userBalance).to.be.equal(firstTotalSupply - minLocked)
                 expect(balanceThirdUser).to.be.equals(lpTokensToMintForThirdUser)
                 expect(secondUserBalance).to.be.equals(lpTokensToMint)
                 expect(lpTokenAddress).to.not.be.equals(ZeroAddress)

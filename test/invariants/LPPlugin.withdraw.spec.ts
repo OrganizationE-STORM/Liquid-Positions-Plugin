@@ -6,7 +6,6 @@ import { LPCallback } from '../../typechain-types';
 
 const NUM_FUZZ_RUNS = process.env.CI ? 10 : 2;
 const TIMEOUT_TESTS = 100_000_000_000_000;
-const MINIMUM_LIQUIDITY = 1000n;
 const FULL_RANGE_TICK_LOWER = -887220;
 const FULL_RANGE_TICK_UPPER = 887220;
 const FULL_RANGE_DEPOSIT = ethers.parseEther('0.1');
@@ -110,6 +109,28 @@ describe("LPPlugin", () => {
                     const balanceToken0PreWithdraw = await token0.balanceOf(signers[i].address)
                     const balanceToken1PreWithdraw = await token1.balanceOf(signers[i].address)
 
+                    // Compute expected using the on-chain burn formula:
+                    //   returned = tokensToBurn * totalLiquidity / totalSupply
+                    // i.e. denominator is full totalSupply (incl. locked LP),
+                    // not just the calling user's balance.
+                    const positionKey =
+                        (BigInt(pluginAddr) << 48n) |
+                        (BigInt.asUintN(24, BigInt(tickLower)) << 24n) |
+                        BigInt.asUintN(24, BigInt(tickUpper));
+                    const positionKeyBytes = ethers.zeroPadValue(
+                        ethers.toBeHex(positionKey & ((1n << 256n) - 1n)),
+                        32
+                    );
+                    const [totalLiquidity] = await pool.positions(positionKeyBytes);
+                    const totalSupplyAtBurn = await lpToken.totalSupply();
+                    const totalAmounts = await utils.getAmountsForLiquidity2(
+                        tickLower,
+                        tickUpper,
+                        totalLiquidity,
+                        state.tick,
+                        state.price
+                    )
+
                     await lpToken.connect(signers[i]).approve(await plugin.getAddress(), tokensToBurn)
                     await plugin.connect(signers[i]).withdraw(
                         signers[i].address,
@@ -123,8 +144,8 @@ describe("LPPlugin", () => {
                     const balanceToken0AfterWithdraw = await token0.balanceOf(signers[i].address)
                     const balanceToken1AfterWithdraw = await token1.balanceOf(signers[i].address)
 
-                    const expectedAmount0 = (amountsForLiquidityDelta.amount0 * tokensToBurn) / lpUserBalanceBeforeWithdraw;
-                    const expectedAmount1 = (amountsForLiquidityDelta.amount1 * tokensToBurn) / lpUserBalanceBeforeWithdraw;
+                    const expectedAmount0 = (totalAmounts.amount0 * tokensToBurn) / totalSupplyAtBurn;
+                    const expectedAmount1 = (totalAmounts.amount1 * tokensToBurn) / totalSupplyAtBurn;
 
                     expect(await lpToken.balanceOf(signers[i].address)).to.be.equals(lpUserBalanceBeforeWithdraw - tokensToBurn);
                     const tolerance = 2_000n;
@@ -303,18 +324,33 @@ describe("LPPlugin", () => {
             const { price } = await pool.globalState();
             const [liquidityAfter, , , fees0After, fees1After] = await pool.positions(positionKey);
 
+            const minLocked = await plugin.getMinLockedLiquidity();
+            // Locked LP keeps share = minLocked / totalSupplyBeforeWithdraw of
+            // every reserve token in the position. Victim's burn returns
+            // pro-rata principal + pro-rata fees; the rest stays for the
+            // locked LP (never withdrawn).
+            const totalSupplyBeforeWithdraw = victimLpBalance + minLocked;
+            const totalReserves0 = amount0Used + DONATED_FEE_0;
+            const totalReserves1 = amount1Used + DONATED_FEE_1;
+            const victimMiss0 = (totalReserves0 * minLocked) / totalSupplyBeforeWithdraw;
+            const victimMiss1 = (totalReserves1 * minLocked) / totalSupplyBeforeWithdraw;
+            // Only the donated portion lives in pool.positions(...).fees{0,1}
+            // after the burn (principal is paid out, not retained as tokensOwed).
+            const lockedFees0 = (DONATED_FEE_0 * minLocked) / totalSupplyBeforeWithdraw;
+            const lockedFees1 = (DONATED_FEE_1 * minLocked) / totalSupplyBeforeWithdraw;
+
             expect(victim0After - victim0Before).to.be.closeTo(
-                amount0Used + DONATED_FEE_0,
-                2_000n
+                totalReserves0,
+                victimMiss0 + 2_000n
             );
             expect(victim1After - victim1Before).to.be.closeTo(
-                amount1Used + DONATED_FEE_1,
-                2_000n
+                totalReserves1,
+                victimMiss1 + 2_000n
             );
             expect(liquidityAfter).to.be.greaterThan(0n);
-            expect(await lpToken.totalSupply()).to.equal(MINIMUM_LIQUIDITY);
-            expect(fees0After).to.be.closeTo(0n, 20n);
-            expect(fees1After).to.be.closeTo(0n, 20n);
+            expect(await lpToken.totalSupply()).to.equal(minLocked);
+            expect(fees0After).to.be.closeTo(lockedFees0, lockedFees0 / 1_000n + 20n);
+            expect(fees1After).to.be.closeTo(lockedFees1, lockedFees1 / 1_000n + 20n);
             expect(
                 await plugin.positionValue(
                     FULL_RANGE_TICK_LOWER,
@@ -381,8 +417,16 @@ describe("LPPlugin", () => {
             const [liquidityAfterVictimExit, , , fees0AfterVictimExit, fees1AfterVictimExit] =
                 await pool.positions(positionKey);
             expect(liquidityAfterVictimExit).to.be.greaterThan(0n);
-            expect(fees0AfterVictimExit).to.be.closeTo(0n, 20n);
-            expect(fees1AfterVictimExit).to.be.closeTo(0n, 20n);
+            // Locked LP retains its proportional share of donated fees as
+            // tokensOwed until burned. Allow a tolerance scaled to that share.
+            const minLockedT10 = await plugin.getMinLockedLiquidity();
+            const totalSupplyBeforeVictimExitT10 = victimLpBalance + minLockedT10;
+            const lockedShare0T10 =
+                (DONATED_FEE_0 * minLockedT10) / totalSupplyBeforeVictimExitT10;
+            const lockedShare1T10 =
+                (DONATED_FEE_1 * minLockedT10) / totalSupplyBeforeVictimExitT10;
+            expect(fees0AfterVictimExit).to.be.closeTo(lockedShare0T10, lockedShare0T10 / 1_000n + 20n);
+            expect(fees1AfterVictimExit).to.be.closeTo(lockedShare1T10, lockedShare1T10 / 1_000n + 20n);
 
             const attacker0Before = await token0.balanceOf(attacker.address);
             const attacker1Before = await token1.balanceOf(attacker.address);

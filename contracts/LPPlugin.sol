@@ -56,7 +56,6 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
     // Plugin state variables
     mapping(int24 => mapping(int24 => address)) public lpTokenByTicks; // Maps tick ranges to LPToken addresses
 
-    uint256 private constant MINIMUM_LIQUIDITY = 10 ** 3;
     address private constant LOCKED_LIQUIDITY_RECEIVER =
         0x000000000000000000000000000000000000dEaD;
 
@@ -87,13 +86,28 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         return payer;
     }
 
-    function getMinInitialValue() public view returns (uint256) {
+    /// @notice Minimum locked LP supply burnt to the dead address on first
+    ///         deposit. Scales with token1 decimals as 10^(decimals-6),
+    ///         with a floor of 1 for tokens with <= 6 decimals.
+    /// @dev The 10^-6-token1 anchor matches Uniswap V2's effective lock
+    ///      scale and keeps the absolute lock value modest across the
+    ///      common 6-18 decimal range.
+    function getMinLockedLiquidity() public view returns (uint256) {
         uint8 token1Decimals = IERC20Metadata(IAlgebraPool(pool).token1())
             .decimals();
-        if (token1Decimals > 3) {
-            return 10 ** uint256(token1Decimals - 3);
+        if (token1Decimals > 6) {
+            return 10 ** uint256(token1Decimals - 6);
         }
         return 1;
+    }
+
+    /// @notice Minimum first-deposit value (in token1 units).
+    /// @dev Pegged to 1000 * MIN_LOCKED so the locked share is always
+    ///      ~0.1% of the first depositor's LP. The ratio (and therefore
+    ///      the first-depositor economic behavior) is the same across
+    ///      every token1 decimal count.
+    function getMinInitialValue() public view returns (uint256) {
+        return getMinLockedLiquidity() * 1000;
     }
 
     /// @notice Called for plugin initialization
@@ -394,7 +408,7 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
         ILPToken lpToken;
         uint256 userValue = amount1 +
             convertToken0ToToken1(amount0, _cache.price);
-
+            
         if (lpTokenAddress == address(0)) {
             string memory tokenName = string.concat(
                 IERC20Metadata(IAlgebraPool(pool).token0()).symbol(),
@@ -418,9 +432,10 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
 
         uint256 totalSupply = lpToken.totalSupply();
         if (totalSupply == 0) {
+            uint256 minLocked = getMinLockedLiquidity();
             require(userValue >= getMinInitialValue(), "Initial value too low");
-            lpTokensToMint = userValue - MINIMUM_LIQUIDITY;
-            lpToken.mint(LOCKED_LIQUIDITY_RECEIVER, MINIMUM_LIQUIDITY);
+            lpTokensToMint = userValue - minLocked;
+            lpToken.mint(LOCKED_LIQUIDITY_RECEIVER, minLocked);
         } else if (_cache.initialValue > 0) {
             lpTokensToMint = Math.mulDiv(
                 userValue,
@@ -428,7 +443,9 @@ contract LPPlugin is AbstractPlugin, IERC721Receiver {
                 _cache.initialValue
             );
         } else {
-            revert("Position value is zero");
+            // Position value was 0 (e.g., after full withdraw leaving only locked minimum)
+            // Mint LP tokens proportional to user's value contribution
+            lpTokensToMint = userValue;
         }
 
         if (lpTokensToMint == 0 && userValue > 0) {
